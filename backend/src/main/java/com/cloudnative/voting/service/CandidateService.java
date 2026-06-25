@@ -22,4 +22,8 @@ public class CandidateService {
     public List<Candidate> getAllCandidates() {
         return candidateRepository.findAll();
     }
+
+    public List<Candidate> getResults() {
+        return candidateRepository.findAll();
+    }
 }

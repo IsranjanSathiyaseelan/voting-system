@@ -15,9 +15,13 @@ public class VoteController {
     }
 
     @PostMapping
-    public String castVote(
-            @RequestBody VoteRequest request) {
+    public String castVote(@RequestBody VoteRequest request) {
 
-        return voteService.castVote(request);
+        try {
+            return voteService.castVote(request);
+
+        } catch (RuntimeException e) {
+            return e.getMessage();
+        }
     }
 }

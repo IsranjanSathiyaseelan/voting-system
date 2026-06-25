@@ -25,4 +25,9 @@ public class CandidateController {
     public List<Candidate> getCandidates() {
         return candidateService.getAllCandidates();
     }
+
+    @GetMapping("/results")
+    public List<Candidate> getResults() {
+        return candidateService.getResults();
+    }
 }
