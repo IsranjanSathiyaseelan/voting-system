@@ -1,0 +1,21 @@
+.container{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.form{
+background:white;
+padding:40px;
+border-radius:10px;
+display:flex;
+flex-direction:column;
+gap:20px;
+}
+
+input{
+padding:12px;
+border:1px solid #ccc;
+border-radius:6px;
+}
