@@ -1,0 +1,18 @@
+.button {
+    background:#2563eb;
+    color:white;
+    padding:12px 25px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.button:hover {
+    background:#1d4ed8;
+}
+
+.button:disabled {
+    opacity:0.6;
+    cursor:not-allowed;
+}
