@@ -25,7 +25,9 @@ const Register = () => {
       login(user);
       navigate("/Home");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to create your account.");
+      setError(
+        err instanceof Error ? err.message : "Unable to create your account.",
+      );
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,11 @@ const Register = () => {
 
         {error ? <p className={styles.error}>{error}</p> : null}
 
-        <Button text={loading ? "Creating account..." : "Register"} type="submit" disabled={loading} />
+        <Button
+          text={loading ? "Creating account..." : "Register"}
+          type="submit"
+          disabled={loading}
+        />
       </form>
     </div>
   );

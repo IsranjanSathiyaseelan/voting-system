@@ -12,11 +12,11 @@ import UserGuard from "../components/user/UserGuard";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 
-import Dashboard from "../pages/Dashboard/Dashboard";
 import Vote from "../pages/Vote/Vote";
 import Results from "../pages/Results/Results";
 
 import Admin from "../pages/Admin/Admin";
+import Home from "../pages/Home/Home";
 
 const AppRoutes = () => {
   return (
@@ -28,7 +28,7 @@ const AppRoutes = () => {
       {/* User Routes */}
       <Route element={<UserGuard />}>
         <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/Home" element={<Home />} />
           <Route path="/vote" element={<Vote />} />
           <Route path="/results" element={<Results />} />
         </Route>

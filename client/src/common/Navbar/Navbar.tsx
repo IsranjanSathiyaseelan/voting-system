@@ -1,38 +1,38 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
-import { useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 const Navbar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    logout();
+    navigate("/");
   };
 
   return (
     <header className={styles.navbar}>
-      {/* Logo */}
-      <Link to="/" className={styles.logo}>
+      <Link to={user ? "/Home" : "/"} className={styles.logo}>
         VotingSystem
       </Link>
 
-      {/* Navigation Links */}
       <nav className={styles.navLinks}>
-        <Link to="/">Home</Link>
-        <Link to="/results">Results</Link>
-
-        {isLoggedIn && <Link to="/profile">Profile</Link>}
-
-        {isLoggedIn ? (
-          <button onClick={handleLogout} className={styles.loginBtn}>
-            Logout
-          </button>
+        {user ? (
+          <>
+            <Link to="/Home">Home</Link>
+            <Link to="/vote">Vote</Link>
+            <Link to="/results">Results</Link>
+            {user.role === "ADMIN" ? (
+              <Link to="/admin/dashboard">Admin</Link>
+            ) : null}
+            <span className={styles.userLabel}>Hi, {user.username}</span>
+            <button onClick={handleLogout} className={styles.loginBtn}>
+              Logout
+            </button>
+          </>
         ) : (
-          <Link
-            to="/login"
-            className={styles.loginBtn}
-            onClick={() => setIsLoggedIn(true)}
-          >
+          <Link to="/" className={styles.loginBtn}>
             Login
           </Link>
         )}
