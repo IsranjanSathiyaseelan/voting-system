@@ -33,41 +33,54 @@ const Login = () => {
 
   return (
     <div className={styles.container}>
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <h2>Welcome back</h2>
-        <p className={styles.subtitle}>Sign in to continue voting</p>
-
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
+      {/* Left Side */}
+      <div className={styles.left}>
+        <img
+          src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/leftSideImage.png"
+          alt="Login"
         />
+      </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+      {/* Right Side */}
+      <div className={styles.right}>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <h2>Sign in</h2>
+          <p className={styles.subtitle}>
+            Welcome back! Please sign in to continue
+          </p>
 
-        {error ? <p className={styles.error}>{error}</p> : null}
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
 
-        <Button
-          text={loading ? "Signing in..." : "Login"}
-          type="submit"
-          disabled={loading}
-        />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-        <p className={styles.registerText}>
-          Don't have an account?{" "}
-          <Link to="/register" className={styles.registerLink}>
-            Register
-          </Link>
-        </p>
-      </form>
+          {error && <p className={styles.error}>{error}</p>}
+
+          <Button
+            text={loading ? "Signing in..." : "Login"}
+            type="submit"
+            disabled={loading}
+          />
+
+          <p className={styles.registerText}>
+            Don't have an account?
+            <Link to="/register" className={styles.registerLink}>
+              Sign up
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 };

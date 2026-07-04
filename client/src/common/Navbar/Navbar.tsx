@@ -1,4 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import {
+  HiOutlineHome,
+  HiOutlineChartBar,
+  HiOutlineLogout,
+  HiOutlineUserCircle,
+  HiOutlineShieldCheck,
+} from "react-icons/hi";
+import { FaVoteYea } from "react-icons/fa";
 import styles from "./Navbar.module.css";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -14,20 +22,65 @@ const Navbar = () => {
   return (
     <header className={styles.navbar}>
       <Link to={user ? "/Home" : "/"} className={styles.logo}>
-        VotingSystem
+        <FaVoteYea />
+        <span>VoteSecure</span>
       </Link>
 
       <nav className={styles.navLinks}>
         {user ? (
           <>
-            <Link to="/Home">Home</Link>
-            <Link to="/vote">Vote</Link>
-            <Link to="/results">Results</Link>
-            {user.role === "ADMIN" ? (
-              <Link to="/admin/dashboard">Admin</Link>
-            ) : null}
-            <span className={styles.userLabel}>Hi, {user.username}</span>
-            <button onClick={handleLogout} className={styles.loginBtn}>
+            <NavLink
+              to="/Home"
+              className={({ isActive }) =>
+                isActive ? styles.active : ""
+              }
+            >
+              <HiOutlineHome />
+              Home
+            </NavLink>
+
+            <NavLink
+              to="/vote"
+              className={({ isActive }) =>
+                isActive ? styles.active : ""
+              }
+            >
+              <FaVoteYea />
+              Vote
+            </NavLink>
+
+            <NavLink
+              to="/results"
+              className={({ isActive }) =>
+                isActive ? styles.active : ""
+              }
+            >
+              <HiOutlineChartBar />
+              Results
+            </NavLink>
+
+            {user.role === "ADMIN" && (
+              <NavLink
+                to="/admin/dashboard"
+                className={({ isActive }) =>
+                  isActive ? styles.active : ""
+                }
+              >
+                <HiOutlineShieldCheck />
+                Admin
+              </NavLink>
+            )}
+
+            <div className={styles.profile}>
+              <HiOutlineUserCircle />
+              <span>{user.username}</span>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className={styles.logoutBtn}
+            >
+              <HiOutlineLogout />
               Logout
             </button>
           </>
