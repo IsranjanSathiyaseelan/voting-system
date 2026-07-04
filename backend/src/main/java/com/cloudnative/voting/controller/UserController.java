@@ -1,5 +1,7 @@
 package com.cloudnative.voting.controller;
 
+import com.cloudnative.voting.dto.LoginRequest;
+import com.cloudnative.voting.dto.UserResponse;
 import com.cloudnative.voting.model.User;
 import com.cloudnative.voting.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +17,12 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public User registerUser(@RequestBody User user) {
+    public UserResponse registerUser(@RequestBody User user) {
         return userService.registerUser(user);
+    }
+
+    @PostMapping("/login")
+    public UserResponse login(@RequestBody LoginRequest request) {
+        return userService.login(request);
     }
 }
