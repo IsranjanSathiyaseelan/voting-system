@@ -10,10 +10,14 @@ export interface AuthContextType {
   logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => authService.getStoredUser());
+  const [user, setUser] = useState<User | null>(() =>
+    authService.getStoredUser(),
+  );
 
   const login = (user: User) => {
     authService.setStoredUser(user);
