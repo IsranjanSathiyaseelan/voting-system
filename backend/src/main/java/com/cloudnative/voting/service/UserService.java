@@ -31,3 +31,4 @@ public class UserService {
         return new UserResponse(user.getId(), user.getUsername(), "USER");
     }
 }
+
