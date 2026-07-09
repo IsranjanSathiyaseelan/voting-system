@@ -7,4 +7,8 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
 
     boolean existsByUserId(Long userId);
 
+    boolean existsByUserIdAndOrganizationId(Long userId, Long organizationId);
+
+    java.util.List<Vote> findAllByOrderByTimestampAsc();
+
 }
