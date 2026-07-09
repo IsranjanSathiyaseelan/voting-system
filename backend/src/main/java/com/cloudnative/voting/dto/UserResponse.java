@@ -3,14 +3,20 @@ package com.cloudnative.voting.dto;
 public class UserResponse {
     private Long id;
     private String username;
+    private String email;
     private String role;
 
     public UserResponse() {
     }
 
     public UserResponse(Long id, String username, String role) {
+        this(id, username, null, role);
+    }
+
+    public UserResponse(Long id, String username, String email, String role) {
         this.id = id;
         this.username = username;
+        this.email = email;
         this.role = role;
     }
 
@@ -28,6 +34,14 @@ public class UserResponse {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getRole() {
