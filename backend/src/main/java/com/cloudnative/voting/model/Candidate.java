@@ -1,5 +1,6 @@
 package com.cloudnative.voting.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,6 +12,14 @@ public class Candidate {
     private Long id;
     private String name;
     private int voteCount;
+
+    @ManyToOne
+    @JoinColumn(name = "organization_id")
+    @JsonIgnore
+    private Organization organization;
+
+    @Transient
+    private Long organizationId;
 
     public Candidate() {
     }
@@ -33,6 +42,18 @@ public class Candidate {
         return voteCount;
     }
 
+    public Long getOrganizationId() {
+        if (organization != null) {
+            return organization.getId();
+        }
+
+        return organizationId;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -43,5 +64,13 @@ public class Candidate {
 
     public void setVoteCount(int voteCount) {
         this.voteCount = voteCount;
+    }
+
+    public void setOrganizationId(Long organizationId) {
+        this.organizationId = organizationId;
+    }
+
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 }
