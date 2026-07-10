@@ -2,30 +2,63 @@ package com.cloudnative.voting.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http)
-            throws Exception {
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/users/register",
-                                "/api/auth/login"
-                        ).permitAll()
-                        .anyRequest()
-                        .authenticated()
-                )
-                .httpBasic(Customizer.withDefaults());
+        public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+                this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        }
 
-        return http.build();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(csrf -> csrf.disable())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                "/api/users/register",
+                                                                "/api/users/login",
+                                                                "/api/auth/login",
+                                                                "/api/admin/login")
+                                                .permitAll()
+                                                // Temporary dev-only access: organizations need real admin protection
+                                                // later.
+                                                .requestMatchers("/api/organizations/**")
+                                                .permitAll()
+                                                .requestMatchers("/api/votes/status")
+                                                .permitAll()
+                                                .requestMatchers("/api/votes/daily")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/candidates",
+                                                                "/api/candidates/results")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/candidates")
+                                                .permitAll()
+                                                .requestMatchers("/api/candidates", "/api/candidates/results",
+                                                                "/api/votes")
+                                                .authenticated()
+                                                .anyRequest()
+                                                .authenticated())
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+                return http.build();
+        }
 }
