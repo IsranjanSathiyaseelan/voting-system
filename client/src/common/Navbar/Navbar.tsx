@@ -1,6 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
-  HiOutlineHome,
   HiOutlineChartBar,
   HiOutlineLogout,
   HiOutlineUserCircle,
@@ -21,39 +20,33 @@ const Navbar = () => {
 
   return (
     <header className={styles.navbar}>
-      <Link to={user ? "/Home" : "/"} className={styles.logo}>
-        <FaVoteYea />
-        <span>VoteSecure</span>
+      <Link
+        to={
+          user?.role === "ADMIN"
+            ? "/admin/dashboard"
+            : user
+              ? "/organizations"
+              : "/"
+        }
+        className={styles.logo}
+      >
+        <span>VoteSystem</span>
       </Link>
 
       <nav className={styles.navLinks}>
         {user ? (
           <>
             <NavLink
-              to="/Home"
-              className={({ isActive }) =>
-                isActive ? styles.active : ""
-              }
-            >
-              <HiOutlineHome />
-              Home
-            </NavLink>
-
-            <NavLink
-              to="/vote"
-              className={({ isActive }) =>
-                isActive ? styles.active : ""
-              }
+              to="/organizations"
+              className={({ isActive }) => (isActive ? styles.active : "")}
             >
               <FaVoteYea />
-              Vote
+              Organizations
             </NavLink>
 
             <NavLink
-              to="/results"
-              className={({ isActive }) =>
-                isActive ? styles.active : ""
-              }
+              to="/organizations"
+              className={({ isActive }) => (isActive ? styles.active : "")}
             >
               <HiOutlineChartBar />
               Results
@@ -62,9 +55,7 @@ const Navbar = () => {
             {user.role === "ADMIN" && (
               <NavLink
                 to="/admin/dashboard"
-                className={({ isActive }) =>
-                  isActive ? styles.active : ""
-                }
+                className={({ isActive }) => (isActive ? styles.active : "")}
               >
                 <HiOutlineShieldCheck />
                 Admin
@@ -76,10 +67,7 @@ const Navbar = () => {
               <span>{user.username}</span>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className={styles.logoutBtn}
-            >
+            <button onClick={handleLogout} className={styles.logoutBtn}>
               <HiOutlineLogout />
               Logout
             </button>
