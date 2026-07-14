@@ -1,44 +1,70 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../common/Button/Button";
 import { useAuth } from "../../hooks/useAuth";
-import { candidateService } from "../../services/candidateService";
+import { organizationService } from "../../services/organizationService";
 import { voteService } from "../../services/voteService";
 import type { Candidate } from "../../types/candidate";
+import type { Organization } from "../../types/organization";
 import "./Vote.css";
 
 const Vote = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { organizationId } = useParams();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
     null,
   );
   const [submitted, setSubmitted] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const parsedOrganizationId = Number(organizationId);
+
+    if (!organizationId || Number.isNaN(parsedOrganizationId)) {
+      setError("Invalid organization.");
+      setLoading(false);
+      return;
+    }
+
     const loadCandidates = async () => {
       setLoading(true);
       setError("");
+      setSubmitted(false);
+      setHasVoted(false);
+      setSelectedCandidate(null);
 
       try {
-        const data = await candidateService.getCandidates();
-        setCandidates(data);
+        const [organizationData, candidateData, voteStatus] = await Promise.all(
+          [
+            organizationService.getById(parsedOrganizationId),
+            organizationService.getCandidates(parsedOrganizationId),
+            user
+              ? organizationService.getVoteStatus(user.id, parsedOrganizationId)
+              : Promise.resolve({ hasVoted: false }),
+          ],
+        );
+
+        setOrganization(organizationData);
+        setCandidates(candidateData);
+        setHasVoted(voteStatus.hasVoted);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Unable to load candidates.",
+          err instanceof Error ? err.message : "Unable to load organization.",
         );
       } finally {
         setLoading(false);
       }
     };
 
-    loadCandidates();
-  }, []);
+    void loadCandidates();
+  }, [organizationId, user]);
 
   const summary = useMemo(() => {
     if (!selectedCandidate) return "Select a candidate to continue.";
@@ -58,6 +84,11 @@ const Vote = () => {
       return;
     }
 
+    if (!organizationId || Number.isNaN(Number(organizationId))) {
+      setError("Invalid organization.");
+      return;
+    }
+
     setSending(true);
     setError("");
 
@@ -67,6 +98,7 @@ const Vote = () => {
         candidateId: selectedCandidate,
       });
       setSubmitted(true);
+      setHasVoted(true);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to submit your vote.",
@@ -81,9 +113,14 @@ const Vote = () => {
       <div className="vote-container">
         <div className="vote-header">
           <span className="badge">🗳 Ballot Paper</span>
-          <h1>Choose Your Candidate</h1>
+          <h1>
+            {organization
+              ? `Vote in ${organization.name}`
+              : "Choose Your Candidate"}
+          </h1>
           <p>
-            Hello {user?.username ?? "Voter"}, review profiles before voting.
+            Hello {user?.username ?? "Voter"}, review profiles before voting in
+            this organization.
           </p>
         </div>
 
@@ -91,6 +128,20 @@ const Vote = () => {
           <p>Loading candidates…</p>
         ) : error ? (
           <p className="error">{error}</p>
+        ) : hasVoted ? (
+          <div className="summary-card">
+            <p>You have already voted in this organization.</p>
+            <div className="actions">
+              <Button
+                text="Back to organizations"
+                onClick={() => navigate("/organizations")}
+              />
+              <Button
+                text="View results"
+                onClick={() => navigate(`/results/${organizationId}`)}
+              />
+            </div>
+          </div>
         ) : candidates.length === 0 ? (
           <p>No candidates are available at this time.</p>
         ) : (
@@ -124,8 +175,12 @@ const Vote = () => {
             <Button
               text={sending ? "Submitting..." : "Submit Vote"}
               onClick={handleSubmit}
+              disabled={sending || hasVoted}
             />
-            <Button text="Back Home" onClick={() => navigate("/Home")} />
+            <Button
+              text="Back to organizations"
+              onClick={() => navigate("/organizations")}
+            />
           </div>
 
           {submitted && (

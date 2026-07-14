@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   PieChart,
   Pie,
@@ -7,23 +8,40 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { candidateService } from "../../services/candidateService";
+import { organizationService } from "../../services/organizationService";
 import type { Candidate } from "../../types/candidate";
+import type { Organization } from "../../types/organization";
 
 import "./Results.css";
 
 const Results = () => {
   const [results, setResults] = useState<Candidate[]>([]);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { organizationId } = useParams();
 
   useEffect(() => {
     const loadResults = async () => {
       setLoading(true);
       setError("");
 
+      const parsedOrganizationId = Number(organizationId);
+
+      if (!organizationId || Number.isNaN(parsedOrganizationId)) {
+        setError("Invalid organization.");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const data = await candidateService.getResults();
+        const [organizationData, data] = await Promise.all([
+          organizationService.getById(parsedOrganizationId),
+          organizationService.getResults(parsedOrganizationId),
+        ]);
+
+        setOrganization(organizationData);
         setResults(data);
       } catch (err) {
         setError(
@@ -34,8 +52,8 @@ const Results = () => {
       }
     };
 
-    loadResults();
-  }, []);
+    void loadResults();
+  }, [organizationId]);
 
   const totalVotes = useMemo(
     () => results.reduce((sum, item) => sum + item.voteCount, 0),
@@ -46,9 +64,13 @@ const Results = () => {
     <div className="results-page">
       {/* HEADER */}
       <div className="results-header">
-        <span className="badge">📊 Election Results</span>
-        <h1>Live Voting Dashboard</h1>
-        <p>Real-time vote distribution across all candidates</p>
+        <span className="badge">Election Results</span>
+        <h1>
+          {organization
+            ? `${organization.name} Results`
+            : "Live Voting Dashboard"}
+        </h1>
+        <p>Real-time vote distribution for this organization</p>
       </div>
 
       {/* TOP STATS */}
@@ -122,6 +144,16 @@ const Results = () => {
                 </PieChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <button
+              type="button"
+              className="back-button"
+              onClick={() => navigate("/organizations")}
+            >
+              Back to organizations
+            </button>
           </div>
         </>
       )}

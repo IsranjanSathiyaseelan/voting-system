@@ -14,31 +14,48 @@ import Register from "../pages/Register/Register";
 
 import Vote from "../pages/Vote/Vote";
 import Results from "../pages/Results/Results";
+import Organizations from "../pages/Organizations/Organizations";
 
-import Admin from "../pages/Admin/Admin";
-import Home from "../pages/Home/Home";
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import AdminCandidates from "../pages/Admin/AdminCandidates";
+import AdminOrganizations from "../pages/Admin/AdminOrganizations";
+import AdminLogin from "../pages/Admin/AdminLogin";
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
 
       {/* User Routes */}
       <Route element={<UserGuard />}>
         <Route element={<MainLayout />}>
-          <Route path="/Home" element={<Home />} />
-          <Route path="/vote" element={<Vote />} />
-          <Route path="/results" element={<Results />} />
+          <Route path="/organizations" element={<Organizations />} />
+          <Route path="/vote/:organizationId" element={<Vote />} />
+          <Route path="/results/:organizationId" element={<Results />} />
+          <Route
+            path="/vote"
+            element={<Navigate to="/organizations" replace />}
+          />
+          <Route
+            path="/results"
+            element={<Navigate to="/organizations" replace />}
+          />
         </Route>
       </Route>
 
       {/* Admin Routes */}
       <Route element={<AdminGuard />}>
         <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/admin/dashboard" element={<Admin />} />
+          <Route
+            path="/admin"
+            element={<Navigate to="/admin/dashboard" replace />}
+          />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/organizations" element={<AdminOrganizations />} />
+          <Route path="/admin/candidates" element={<AdminCandidates />} />
         </Route>
       </Route>
     </Routes>

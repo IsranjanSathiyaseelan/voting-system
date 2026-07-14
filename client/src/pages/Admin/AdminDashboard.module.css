@@ -1,0 +1,93 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+}
+
+.page :global(.recharts-wrapper) {
+  border-radius: 14px;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+  border-radius: 20px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.15);
+}
+
+.badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #111827;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.statCard,
+.panel {
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.statCard h2,
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #334155;
+}
+
+.statCard p {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.muted {
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.chartWrap {
+  margin-top: 16px;
+  width: 100%;
+  min-height: 280px;
+}
+
+.emptyState {
+  padding: 14px;
+  margin-top: 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+@media (max-width: 780px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

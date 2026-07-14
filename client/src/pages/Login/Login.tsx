@@ -5,6 +5,7 @@ import Button from "../../common/Button/Button";
 import styles from "./Login.module.css";
 import { useAuth } from "../../hooks/useAuth";
 import { authService } from "../../services/authService";
+import SignUp from "../../assets/SignUp.jpg";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -23,7 +24,7 @@ const Login = () => {
     try {
       const user = await authService.login({ username, password });
       login(user);
-      navigate(user.role === "ADMIN" ? "/admin/dashboard" : "/Home");
+      navigate(user.role === "ADMIN" ? "/admin/dashboard" : "/organizations");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sign in.");
     } finally {
@@ -35,10 +36,7 @@ const Login = () => {
     <div className={styles.container}>
       {/* Left Side */}
       <div className={styles.left}>
-        <img
-          src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/leftSideImage.png"
-          alt="Login"
-        />
+        <img src={SignUp} alt="Sign Up" />
       </div>
 
       {/* Right Side */}
@@ -75,7 +73,7 @@ const Login = () => {
 
           <p className={styles.registerText}>
             Don't have an account?
-            <Link to="/register" className={styles.registerLink}>
+            <Link to="/" className={styles.registerLink}>
               Sign up
             </Link>
           </p>

@@ -4,6 +4,7 @@ import Button from "../../common/Button/Button";
 import styles from "./Register.module.css";
 import { useAuth } from "../../hooks/useAuth";
 import { userService } from "../../services/userService";
+import SignUp from "../../assets/SignUp.jpg";
 
 const Register = () => {
   const [username, setUsername] = useState("");
@@ -37,10 +38,7 @@ const Register = () => {
     <div className={styles.container}>
       {/* Left Image */}
       <div className={styles.left}>
-        <img
-          src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/login/leftSideImage.png"
-          alt="Register"
-        />
+      <img src={SignUp} alt="Sign Up" />
       </div>
 
       {/* Right Side */}

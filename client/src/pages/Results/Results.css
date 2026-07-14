@@ -148,6 +148,20 @@
   justify-content: center;
 }
 
+.back-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: #0f172a;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  opacity: 0.92;
+}
+
 /* =========================
    RESPONSIVE
 ========================= */
