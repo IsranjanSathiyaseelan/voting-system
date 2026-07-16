@@ -5,19 +5,17 @@ public class VoteRequest {
     private Long userId;
     private Long candidateId;
 
-    public Long getUserId() {
-        return userId;
-    }
+    /** Election this vote is cast in (preferred). */
+    private Long electionId;
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    public VoteRequest() {}
 
-    public Long getCandidateId() {
-        return candidateId;
-    }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
-    public void setCandidateId(Long candidateId) {
-        this.candidateId = candidateId;
-    }
+    public Long getCandidateId() { return candidateId; }
+    public void setCandidateId(Long candidateId) { this.candidateId = candidateId; }
+
+    public Long getElectionId() { return electionId; }
+    public void setElectionId(Long electionId) { this.electionId = electionId; }
 }
