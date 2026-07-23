@@ -2,6 +2,7 @@ export interface Candidate {
   id: number;
   name: string;
   voteCount: number;
-  organizationId: number;
+  electionId?: number | null;
+  organizationId?: number | null;
   party?: string;
 }

@@ -1,97 +1,172 @@
+/* ==========================================================================
+   ADMIN SECTIONS — shared by Organizations, Elections, Candidates pages
+   Dark SaaS palette: matches AdminDashboard.module.css tokens
+   ========================================================================== */
+
+/* ── Page shell ─────────────────────────────────────────────────────────── */
 .page {
   display: flex;
   flex-direction: column;
-    padding: 20px;
-  gap: 20px;
+  padding: 32px;
+  gap: 24px;
+  background-color: #0f172a;
+  min-height: 100vh;
+  color: #f8fafc;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* ── Panel cards (main content areas) ──────────────────────────────────── */
 .panel {
-  padding: 20px 22px;
+  padding: 28px 30px;
   border-radius: 18px;
-  background: white;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  background-color: #1e293b;               /* subtle dark-blue card — matches dashboard */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
-.panel h1,
+/* ── Panel headings ─────────────────────────────────────────────────────── */
+.panel h1 {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
 .panel h2 {
-  margin: 0 0 8px;
-  font-size: 1rem;
-  color: #334155;
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
+/* ── Muted / subtitle text ──────────────────────────────────────────────── */
+.muted {
+  color: #94a3b8;
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+/* ── Form layout ────────────────────────────────────────────────────────── */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-top: 16px;
+  gap: 16px;
+  margin-top: 20px;
 }
 
+/* ── Field labels ───────────────────────────────────────────────────────── */
 .field {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-weight: 600;
-  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
+/* ── Input & Select controls ────────────────────────────────────────────── */
 .field input,
 .field select {
-  padding: 11px 12px;
+  padding: 11px 14px;
   border-radius: 10px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 0.95rem;
-  background: white;
+  font-weight: 500;
+  background-color: #0f172a;              /* same dark base as page bg for depth */
+  color: #f1f5f9;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 44px;
 }
 
+.field input::placeholder {
+  color: #475569;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* ── Action button row ──────────────────────────────────────────────────── */
 .actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.error {
-  color: #b91c1c;
-  font-size: 0.95rem;
-}
-
-.muted {
-  color: #64748b;
   margin-top: 4px;
 }
 
-.emptyState {
-  padding: 14px;
-  margin-top: 16px;
-  border-radius: 12px;
-  background: #f8fafc;
-  color: #475569;
+/* ── Error callout ──────────────────────────────────────────────────────── */
+.error {
+  color: #f87171;
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.emptyState {
+  padding: 18px;
+  margin-top: 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ── Organisation / Candidate item list ─────────────────────────────────── */
 .list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
+/* ── Individual list cards (rows inside "Existing organizations") ─────── */
 .card {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 16px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-radius: 14px;
-  background: #f8fafc;
+  background-color: #0f172a;             /* slightly darker inset vs the #1e293b panel */
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  background-color: rgba(30, 41, 59, 0.85);
+}
+
+.card strong {
+  color: #ffffff;
+  font-size: 0.97rem;
+  font-weight: 700;
 }
 
 .card p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: #94a3b8;
+  font-size: 0.88rem;
 }
 
+/* ── Vote badge (used in candidates list) ───────────────────────────────── */
 .voteBadge {
-  padding: 6px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  font-size: 0.75rem;
   font-weight: 700;
 }

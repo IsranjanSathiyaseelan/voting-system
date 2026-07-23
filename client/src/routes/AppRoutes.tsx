@@ -19,6 +19,7 @@ import Organizations from "../pages/Organizations/Organizations";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import AdminCandidates from "../pages/Admin/AdminCandidates";
 import AdminOrganizations from "../pages/Admin/AdminOrganizations";
+import AdminElections from "../pages/Admin/AdminElections";
 import AdminLogin from "../pages/Admin/AdminLogin";
 
 const AppRoutes = () => {
@@ -55,6 +56,7 @@ const AppRoutes = () => {
           />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/organizations" element={<AdminOrganizations />} />
+          <Route path="/admin/elections" element={<AdminElections />} />
           <Route path="/admin/candidates" element={<AdminCandidates />} />
         </Route>
       </Route>

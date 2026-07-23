@@ -1,10 +1,7 @@
 import { api } from "./api";
-import type { VoteRequest } from "../types/vote";
+import type { VoteRequest, DailyVoteCount, VoteStatusResponse } from "../types/vote";
 
-export interface DailyVoteCount {
-  date: string;
-  votes: number;
-}
+export type { DailyVoteCount };
 
 export const voteService = {
   async castVote(payload: VoteRequest): Promise<string> {
@@ -14,6 +11,20 @@ export const voteService = {
 
   async getDailyVotes(): Promise<DailyVoteCount[]> {
     const response = await api.get<DailyVoteCount[]>("/votes/daily");
+    return response.data;
+  },
+
+  async getVoteStatus(userId: number, organizationId: number): Promise<VoteStatusResponse> {
+    const response = await api.get<VoteStatusResponse>("/votes/status", {
+      params: { userId, organizationId },
+    });
+    return response.data;
+  },
+
+  async getElectionVoteStatus(userId: number, electionId: number): Promise<VoteStatusResponse> {
+    const response = await api.get<VoteStatusResponse>("/votes/status/election", {
+      params: { userId, electionId },
+    });
     return response.data;
   },
 };

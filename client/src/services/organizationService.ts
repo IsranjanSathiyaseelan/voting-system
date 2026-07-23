@@ -1,6 +1,9 @@
 import { api } from "./api";
 import type { Candidate } from "../types/candidate";
 import type { Organization } from "../types/organization";
+import type { Election } from "../types/election";
+import type { User } from "../types/auth";
+import type { DashboardStats } from "../types/dashboard";
 
 export interface VoteStatusResponse {
   hasVoted: boolean;
@@ -38,6 +41,21 @@ export const organizationService = {
 
   async getResults(id: number): Promise<Candidate[]> {
     const response = await api.get<Candidate[]>(`/organizations/${id}/results`);
+    return response.data;
+  },
+
+  async getElections(id: number): Promise<Election[]> {
+    const response = await api.get<Election[]>(`/organizations/${id}/elections`);
+    return response.data;
+  },
+
+  async getMembers(id: number): Promise<User[]> {
+    const response = await api.get<User[]>(`/organizations/${id}/members`);
+    return response.data;
+  },
+
+  async getDashboardStats(): Promise<DashboardStats> {
+    const response = await api.get<DashboardStats>("/organizations/dashboard/stats");
     return response.data;
   },
 

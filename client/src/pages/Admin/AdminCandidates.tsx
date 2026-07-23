@@ -2,15 +2,22 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Button from "../../common/Button/Button";
 import { candidateService } from "../../services/candidateService";
 import { organizationService } from "../../services/organizationService";
+import { electionService } from "../../services/electionService";
 import type { Candidate } from "../../types/candidate";
 import type { Organization } from "../../types/organization";
+import type { Election } from "../../types/election";
 import styles from "./AdminSections.module.css";
 
 const AdminCandidates = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [elections, setElections] = useState<Election[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [candidateName, setCandidateName] = useState("");
+  const [candidateParty, setCandidateParty] = useState("");
   const [candidateOrganizationId, setCandidateOrganizationId] = useState<
+    number | ""
+  >("");
+  const [candidateElectionId, setCandidateElectionId] = useState<
     number | ""
   >("");
   const [loading, setLoading] = useState(true);
@@ -25,25 +32,38 @@ const AdminCandidates = () => {
     [organizations],
   );
 
-  const loadCandidates = async () => {
+  const electionLookup = useMemo(
+    () =>
+      new Map(
+        elections.map((election) => [election.id, election]),
+      ),
+    [elections],
+  );
+
+  const loadCandidatesData = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [organizationData, candidateData] = await Promise.all([
-        organizationService.getAll(),
-        candidateService.getCandidates(),
+      const [organizationData, electionData, candidateData] = await Promise.all([
+        organizationService.getAll().catch(() => [] as Organization[]),
+        electionService.getAll().catch(() => [] as Election[]),
+        candidateService.getCandidates().catch(() => [] as Candidate[]),
       ]);
 
       setOrganizations(organizationData);
+      setElections(electionData);
       setCandidates(candidateData);
 
       if (candidateOrganizationId === "" && organizationData.length > 0) {
         setCandidateOrganizationId(organizationData[0].id);
       }
+      if (candidateElectionId === "" && electionData.length > 0) {
+        setCandidateElectionId(electionData[0].id);
+      }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Unable to load candidates.",
+        err instanceof Error ? err.message : "Unable to load candidates data.",
       );
     } finally {
       setLoading(false);
@@ -51,7 +71,7 @@ const AdminCandidates = () => {
   };
 
   useEffect(() => {
-    void loadCandidates();
+    void loadCandidatesData();
   }, []);
 
   const handleAddCandidate = async (event: FormEvent<HTMLFormElement>) => {
@@ -62,23 +82,21 @@ const AdminCandidates = () => {
       return;
     }
 
-    if (candidateOrganizationId === "") {
-      setError("Select an organization for this candidate.");
-      return;
-    }
-
     setSavingCandidate(true);
     setError("");
 
     try {
       const created = await candidateService.addCandidate({
         name: candidateName.trim(),
+        party: candidateParty.trim() || undefined,
         voteCount: 0,
-        organizationId: candidateOrganizationId,
+        organizationId: candidateOrganizationId !== "" ? candidateOrganizationId : undefined,
+        electionId: candidateElectionId !== "" ? candidateElectionId : undefined,
       });
 
       setCandidates((current) => [created, ...current]);
       setCandidateName("");
+      setCandidateParty("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to add candidate.");
     } finally {
@@ -91,46 +109,78 @@ const AdminCandidates = () => {
       <section className={styles.panel}>
         <h1>Candidates</h1>
         <p className={styles.muted}>
-          Attach candidates to organizations and review their totals.
+          Attach candidates to active elections or organizations and track vote totals.
         </p>
 
         <form className={styles.form} onSubmit={handleAddCandidate}>
           <label className={styles.field}>
-            <span>Candidate name</span>
+            <span>Candidate Name</span>
             <input
               value={candidateName}
               onChange={(event) => setCandidateName(event.target.value)}
+              placeholder="Candidate Full Name"
+              required
             />
           </label>
           <label className={styles.field}>
-            <span>Organization</span>
-            <select
-              value={candidateOrganizationId}
-              onChange={(event) =>
-                setCandidateOrganizationId(
-                  event.target.value === "" ? "" : Number(event.target.value),
-                )
-              }
-            >
-              <option value="">Select organization</option>
-              {organizations.map((organization) => (
-                <option key={organization.id} value={organization.id}>
-                  {organization.name}
-                </option>
-              ))}
-            </select>
+            <span>Party / Tagline</span>
+            <input
+              value={candidateParty}
+              onChange={(event) => setCandidateParty(event.target.value)}
+              placeholder="e.g. Independent, Tech Party"
+            />
           </label>
+          {elections.length > 0 && (
+            <label className={styles.field}>
+              <span>Election (Optional)</span>
+              <select
+                value={candidateElectionId}
+                onChange={(event) =>
+                  setCandidateElectionId(
+                    event.target.value === "" ? "" : Number(event.target.value),
+                  )
+                }
+              >
+                <option value="">Select Election</option>
+                {elections.map((election) => (
+                  <option key={election.id} value={election.id}>
+                    {election.title} {election.active ? "(Active)" : "(Inactive)"}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {organizations.length > 0 && (
+            <label className={styles.field}>
+              <span>Organization (Optional)</span>
+              <select
+                value={candidateOrganizationId}
+                onChange={(event) =>
+                  setCandidateOrganizationId(
+                    event.target.value === "" ? "" : Number(event.target.value),
+                  )
+                }
+              >
+                <option value="">Select Organization</option>
+                {organizations.map((organization) => (
+                  <option key={organization.id} value={organization.id}>
+                    {organization.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {error ? <p className={styles.error}>{error}</p> : null}
           <div className={styles.actions}>
             <Button
-              text={savingCandidate ? "Adding..." : "Add candidate"}
+              text={savingCandidate ? "Adding..." : "Add Candidate"}
               type="submit"
-              disabled={savingCandidate || organizations.length === 0}
+              disabled={savingCandidate}
             />
             <Button
               text="Refresh"
               onClick={() => {
-                void loadCandidates();
+                void loadCandidatesData();
               }}
             />
           </div>
@@ -138,7 +188,7 @@ const AdminCandidates = () => {
       </section>
 
       <section className={styles.panel}>
-        <h2>Current candidates</h2>
+        <h2>Current Candidates</h2>
         {loading ? (
           <p className={styles.muted}>Loading candidates…</p>
         ) : candidates.length === 0 ? (
@@ -147,20 +197,29 @@ const AdminCandidates = () => {
           </div>
         ) : (
           <div className={styles.list}>
-            {candidates.map((candidate) => (
-              <div key={candidate.id} className={styles.card}>
-                <div>
-                  <strong>{candidate.name}</strong>
-                  <p>
-                    {organizationLookup.get(candidate.organizationId)?.name ??
-                      "Unknown organization"}
-                  </p>
+            {candidates.map((candidate) => {
+              const orgName = candidate.organizationId
+                ? organizationLookup.get(candidate.organizationId)?.name
+                : undefined;
+              const electionTitle = candidate.electionId
+                ? electionLookup.get(candidate.electionId)?.title
+                : undefined;
+
+              return (
+                <div key={candidate.id} className={styles.card}>
+                  <div>
+                    <strong>{candidate.name}</strong>
+                    {candidate.party ? <p>Party: {candidate.party}</p> : null}
+                    <p style={{ fontSize: "0.85rem" }}>
+                      {electionTitle ? `Election: ${electionTitle}` : orgName ? `Org: ${orgName}` : "General Candidate"}
+                    </p>
+                  </div>
+                  <span className={styles.voteBadge}>
+                    {candidate.voteCount} votes
+                  </span>
                 </div>
-                <span className={styles.voteBadge}>
-                  {candidate.voteCount} votes
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

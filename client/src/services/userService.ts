@@ -6,4 +6,16 @@ export const userService = {
     const response = await api.post<User>("/users/register", payload);
     return response.data;
   },
+
+  async getMembers(): Promise<User[]> {
+    const response = await api.get<User[]>("/users/members");
+    return response.data;
+  },
+
+  async updateMemberStatus(memberId: number, status: string): Promise<User> {
+    const response = await api.patch<User>(`/users/members/${memberId}/status`, null, {
+      params: { status },
+    });
+    return response.data;
+  },
 };

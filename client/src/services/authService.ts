@@ -1,13 +1,8 @@
 import { api } from "./api";
-import type { LoginRequest, User } from "../types/auth";
+import type { LoginRequest, LoginResponse, User } from "../types/auth";
 
 const USER_STORAGE_KEY = "voting-system-user";
 const TOKEN_STORAGE_KEY = "voting-system-token";
-
-interface AuthResponse {
-  token: string;
-  user: User;
-}
 
 const readStoredUser = (): User | null => {
   try {
@@ -38,7 +33,7 @@ const writeStoredToken = (token: string | null): void => {
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<User> {
-    const response = await api.post<AuthResponse>("/auth/login", credentials);
+    const response = await api.post<LoginResponse>("/auth/login", credentials);
 
     const { token, user } = response.data;
     writeStoredUser(user);
@@ -48,8 +43,7 @@ export const authService = {
   },
 
   async adminLogin(credentials: LoginRequest): Promise<User> {
-    // Standardize to database-driven JWT login flow
-    const response = await api.post<AuthResponse>("/auth/login", credentials);
+    const response = await api.post<LoginResponse>("/auth/login", credentials);
 
     const { token, user } = response.data;
     writeStoredUser(user);
@@ -60,6 +54,10 @@ export const authService = {
 
   getStoredUser(): User | null {
     return readStoredUser();
+  },
+
+  getStoredToken(): string | null {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
   },
 
   setStoredUser(user: User): void {
@@ -80,7 +78,6 @@ export const authService = {
     const response = await api.put<User>("/users/profile", profileData);
     const updatedUser = response.data;
     
-    // Sync with storage if updating self
     const current = readStoredUser();
     if (current && current.id === updatedUser.id) {
       writeStoredUser(updatedUser);

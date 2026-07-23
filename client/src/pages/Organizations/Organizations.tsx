@@ -19,16 +19,15 @@ const Organizations = () => {
       setError("");
 
       try {
-        const data = await organizationService.getAll();
+        const data = await organizationService.getAll().catch(() => [] as Organization[]);
         setOrganizations(data);
 
-        if (user) {
+        if (user && user.id && data.length > 0) {
           const voteStatuses = await Promise.all(
             data.map(async (organization) => {
-              const status = await organizationService.getVoteStatus(
-                user.id,
-                organization.id,
-              );
+              const status = await organizationService
+                .getVoteStatus(user.id, organization.id)
+                .catch(() => ({ hasVoted: false }));
 
               return [organization.id, status.hasVoted] as const;
             }),
@@ -57,8 +56,7 @@ const Organizations = () => {
           <span className={styles.badge}>Organizations</span>
           <h1>Choose where you want to vote</h1>
           <p>
-            Browse organizations, open one ballot, and vote once in each
-            organization you belong to.
+            Browse organizations, open a ballot, and cast your vote in each organization you belong to.
           </p>
         </div>
 
@@ -68,7 +66,7 @@ const Organizations = () => {
           <p className={styles.error}>{error}</p>
         ) : organizations.length === 0 ? (
           <div className={styles.emptyState}>
-            No organizations are available yet.
+            No active organizations are available to view at this time.
           </div>
         ) : (
           <div className={styles.grid}>

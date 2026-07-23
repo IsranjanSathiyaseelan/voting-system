@@ -1,10 +1,9 @@
 .page {
   min-height: 100vh;
-  padding: 28px;
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 32%),
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 28%),
-    linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 40px 24px;
+  background-color: #0f172a;
+  color: #f8fafc;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .shell {
@@ -13,62 +12,88 @@
 }
 
 .hero {
-  margin-bottom: 24px;
-  padding: 28px;
+  margin-bottom: 32px;
+  padding: 36px 40px;
   border-radius: 24px;
-  background: rgba(15, 23, 42, 0.94);
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #f8fafc;
-  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .badge {
-  display: inline-block;
-  margin-bottom: 12px;
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 6px 14px;
   border-radius: 999px;
-  background: #f59e0b;
-  color: #111827;
-  font-size: 0.78rem;
-  font-weight: 800;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .hero h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 3.4rem);
+  margin: 0 0 10px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
 .hero p {
-  max-width: 60ch;
-  margin: 12px 0 0;
-  color: rgba(248, 250, 252, 0.82);
+  max-width: 65ch;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 1rem;
   line-height: 1.6;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
 }
 
 .card {
   appearance: none;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   text-align: left;
-  padding: 20px;
+  padding: 24px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  background: #1e293b;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+  outline: none;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s ease,
+              box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+  transform: translateY(-4px);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(59, 130, 246, 0.15);
 }
 
 .cardTop {
@@ -76,7 +101,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .logo {
@@ -85,41 +110,46 @@
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: linear-gradient(135deg, #1d4ed8, #0f766e);
-  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
   font-size: 1.3rem;
   font-weight: 800;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
 }
 
 .openBadge,
 .votedBadge {
-  padding: 6px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .openBadge {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
 }
 
 .votedBadge {
-  background: #dcfce7;
-  color: #15803d;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
 }
 
 .cardBody h2 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #0f172a;
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .cardBody p {
-  margin: 10px 0 0;
-  color: #475569;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
   line-height: 1.55;
 }
 
@@ -127,36 +157,40 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid #e2e8f0;
-  color: #0f172a;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #60a5fa;
   font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .state,
 .error,
 .emptyState {
-  padding: 18px 20px;
+  padding: 24px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 .error {
-  color: #b91c1c;
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .emptyState {
-  color: #475569;
+  color: #94a3b8;
+  text-align: center;
 }
 
 @media (max-width: 640px) {
   .page {
-    padding: 16px;
+    padding: 20px 16px;
   }
 
   .hero {
-    padding: 22px;
+    padding: 24px;
   }
 }
