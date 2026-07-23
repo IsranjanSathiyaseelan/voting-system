@@ -7,12 +7,18 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
+  role?: "SUPER_ADMIN" | "ORGANIZATION_ADMIN" | "ELECTION_MANAGER" | "VOTER";
+  organizationId?: number;
 }
 
 export interface User {
   id: number;
   username: string;
   email: string;
-  role: "USER" | "ADMIN";
+  role: "SUPER_ADMIN" | "ORGANIZATION_ADMIN" | "ELECTION_MANAGER" | "VOTER";
+  organizationId?: number;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
   password?: string;
 }

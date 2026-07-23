@@ -18,11 +18,18 @@ const Navbar = () => {
     navigate("/");
   };
 
+  const isAdmin = user && [
+    "SUPER_ADMIN",
+    "ORGANIZATION_ADMIN",
+    "ELECTION_MANAGER",
+    "ADMIN",
+  ].includes(user.role);
+
   return (
     <header className={styles.navbar}>
       <Link
         to={
-          user?.role === "ADMIN"
+          isAdmin
             ? "/admin/dashboard"
             : user
               ? "/organizations"
@@ -52,7 +59,7 @@ const Navbar = () => {
               Results
             </NavLink>
 
-            {user.role === "ADMIN" && (
+            {isAdmin && (
               <NavLink
                 to="/admin/dashboard"
                 className={({ isActive }) => (isActive ? styles.active : "")}

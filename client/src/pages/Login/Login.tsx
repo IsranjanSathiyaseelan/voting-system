@@ -24,7 +24,8 @@ const Login = () => {
     try {
       const user = await authService.login({ username, password });
       login(user);
-      navigate(user.role === "ADMIN" ? "/admin/dashboard" : "/organizations");
+      const isAdmin = ["SUPER_ADMIN", "ORGANIZATION_ADMIN", "ELECTION_MANAGER", "ADMIN"].includes(user.role);
+      navigate(isAdmin ? "/admin/dashboard" : "/organizations");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sign in.");
     } finally {

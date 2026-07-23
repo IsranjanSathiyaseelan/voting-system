@@ -48,12 +48,14 @@ export const authService = {
   },
 
   async adminLogin(credentials: LoginRequest): Promise<User> {
-    const response = await api.post<User>("/admin/login", credentials);
+    // Standardize to database-driven JWT login flow
+    const response = await api.post<AuthResponse>("/auth/login", credentials);
 
-    writeStoredUser(response.data);
-    writeStoredToken(null);
+    const { token, user } = response.data;
+    writeStoredUser(user);
+    writeStoredToken(token);
 
-    return response.data;
+    return user;
   },
 
   getStoredUser(): User | null {
@@ -67,5 +69,35 @@ export const authService = {
   clearStoredUser(): void {
     writeStoredUser(null);
     writeStoredToken(null);
+  },
+
+  async getProfile(): Promise<User> {
+    const response = await api.get<User>("/users/profile");
+    return response.data;
+  },
+
+  async updateProfile(profileData: Partial<User>): Promise<User> {
+    const response = await api.put<User>("/users/profile", profileData);
+    const updatedUser = response.data;
+    
+    // Sync with storage if updating self
+    const current = readStoredUser();
+    if (current && current.id === updatedUser.id) {
+      writeStoredUser(updatedUser);
+    }
+    return updatedUser;
+  },
+
+  async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+    await api.put("/users/change-password", data);
+  },
+
+  async forgotPassword(email: string): Promise<{ token: string }> {
+    const response = await api.post<{ token: string }>("/users/forgot-password", { email });
+    return response.data;
+  },
+
+  async resetPassword(data: { token: string; newPassword: string }): Promise<void> {
+    await api.post("/users/reset-password", data);
   },
 };

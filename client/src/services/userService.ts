@@ -3,11 +3,7 @@ import type { RegisterRequest, User } from "../types/auth";
 
 export const userService = {
   async register(payload: RegisterRequest): Promise<User> {
-    const response = await api.post<User>("/users/register", {
-      username: payload.username,
-      email: payload.email,
-      password: payload.password,
-    });
+    const response = await api.post<User>("/users/register", payload);
     return response.data;
   },
 };
