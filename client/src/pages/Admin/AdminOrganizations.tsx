@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import Button from "../../common/Button/Button";
 import { organizationService } from "../../services/organizationService";
 import type { Organization } from "../../types/organization";
@@ -6,9 +6,6 @@ import styles from "./AdminSections.module.css";
 
 const AdminOrganizations = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [organizationName, setOrganizationName] = useState("");
-  const [organizationDescription, setOrganizationDescription] = useState("");
-  const [organizationIcon, setOrganizationIcon] = useState("");
   const [editingOrganizationId, setEditingOrganizationId] = useState<
     number | null
   >(null);
@@ -38,38 +35,6 @@ const AdminOrganizations = () => {
   useEffect(() => {
     void loadOrganizations();
   }, []);
-
-  const handleCreateOrganization = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-
-    if (!organizationName.trim()) {
-      setError("Enter an organization name.");
-      return;
-    }
-
-    setSavingOrganization(true);
-    setError("");
-
-    try {
-      const created = await organizationService.create({
-        name: organizationName.trim(),
-        description: organizationDescription.trim() || undefined,
-        icon: organizationIcon.trim() || undefined,
-      });
-      setOrganizations((current) => [created, ...current]);
-      setOrganizationName("");
-      setOrganizationDescription("");
-      setOrganizationIcon("");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to create organization.",
-      );
-    } finally {
-      setSavingOrganization(false);
-    }
-  };
 
   const beginEdit = (organization: Organization) => {
     setEditingOrganizationId(organization.id);
@@ -139,54 +104,23 @@ const AdminOrganizations = () => {
   return (
     <div className={styles.page}>
       <section className={styles.panel}>
-        <h1>Organizations</h1>
-        <p className={styles.muted}>Create and manage voting organizations.</p>
-
-        <form className={styles.form} onSubmit={handleCreateOrganization}>
-          <label className={styles.field}>
-            <span>Organization name</span>
-            <input
-              value={organizationName}
-              onChange={(event) => setOrganizationName(event.target.value)}
-            />
-          </label>
-          <label className={styles.field}>
-            <span>Description</span>
-            <input
-              value={organizationDescription}
-              onChange={(event) =>
-                setOrganizationDescription(event.target.value)
-              }
-            />
-          </label>
-          <label className={styles.field}>
-            <span>Icon or logo</span>
-            <input
-              value={organizationIcon}
-              onChange={(event) => setOrganizationIcon(event.target.value)}
-            />
-          </label>
-          {error ? <p className={styles.error}>{error}</p> : null}
-          <div className={styles.actions}>
-            <Button
-              text={savingOrganization ? "Saving..." : "Create organization"}
-              type="submit"
-              disabled={savingOrganization}
-            />
-            <Button
-              text="Refresh"
-              onClick={() => {
-                void loadOrganizations();
-              }}
-            />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h1>Organizations</h1>
+            <p className={styles.muted}>Manage existing voting organizations.</p>
           </div>
-        </form>
-      </section>
+          <Button
+            text="Refresh"
+            onClick={() => {
+              void loadOrganizations();
+            }}
+          />
+        </div>
 
-      <section className={styles.panel}>
-        <h2>Existing organizations</h2>
+        {error ? <p className={styles.error} style={{ marginTop: "14px" }}>{error}</p> : null}
+
         {loading ? (
-          <p className={styles.muted}>Loading organizations…</p>
+          <p className={styles.muted} style={{ marginTop: "16px" }}>Loading organizations…</p>
         ) : organizations.length === 0 ? (
           <div className={styles.emptyState}>
             No organizations have been created yet.

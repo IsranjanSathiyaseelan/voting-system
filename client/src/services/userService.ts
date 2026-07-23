@@ -18,4 +18,13 @@ export const userService = {
     });
     return response.data;
   },
+
+  async getProfile(): Promise<User> {
+    const response = await api.get<User>("/users/profile");
+    return response.data;
+  },
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    await api.post("/users/change-password", { oldPassword, newPassword });
+  },
 };

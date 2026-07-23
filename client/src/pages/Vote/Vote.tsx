@@ -5,29 +5,27 @@ import {
   HiOutlineShieldCheck,
   HiOutlineClipboardCopy,
   HiOutlineClipboardCheck,
-  HiOutlineArrowRight,
   HiOutlineExclamationCircle,
   HiOutlineLockClosed,
 } from "react-icons/hi";
 import Button from "../../common/Button/Button";
 import { useAuth } from "../../hooks/useAuth";
-import { organizationService } from "../../services/organizationService";
+import { electionService } from "../../services/electionService";
 import { voteService } from "../../services/voteService";
 import { candidateService } from "../../services/candidateService";
 import type { Candidate } from "../../types/candidate";
-import type { Organization } from "../../types/organization";
 import type { Election } from "../../types/election";
 import "./Vote.css";
 
 const Vote = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { organizationId } = useParams();
+  const { electionId, organizationId } = useParams();
 
   const [elections, setElections] = useState<Election[]>([]);
+  const [currentElection, setCurrentElection] = useState<Election | null>(null);
   const [selectedElectionId, setSelectedElectionId] = useState<number | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [organization, setOrganization] = useState<Organization | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
 
@@ -42,13 +40,8 @@ const Vote = () => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const parsedOrganizationId = Number(organizationId);
-
-    if (!organizationId || Number.isNaN(parsedOrganizationId)) {
-      setError("Invalid organization selection.");
-      setLoading(false);
-      return;
-    }
+    const rawId = electionId || organizationId;
+    const parsedId = Number(rawId);
 
     const loadInitialData = async () => {
       setLoading(true);
@@ -56,42 +49,37 @@ const Vote = () => {
       setSubmitted(false);
 
       try {
-        const [orgData, orgElections] = await Promise.all([
-          organizationService.getById(parsedOrganizationId).catch(() => null),
-          organizationService.getElections(parsedOrganizationId).catch(() => [] as Election[]),
-        ]);
+        const allElections = await electionService.getAll().catch(() => [] as Election[]);
+        setElections(allElections);
 
-        setOrganization(orgData);
-        setElections(orgElections);
+        let targetElectionId = !Number.isNaN(parsedId) && parsedId > 0 ? parsedId : null;
 
-        const activeElections = orgElections.filter((e) => e.active);
-        const targetElectionId = activeElections.length > 0 ? activeElections[0].id : null;
+        if (!targetElectionId && allElections.length > 0) {
+          const activeElections = allElections.filter((e) => e.active);
+          targetElectionId = activeElections.length > 0 ? activeElections[0].id : allElections[0].id;
+        }
+
         setSelectedElectionId(targetElectionId);
 
-        let candidateData: Candidate[] = [];
-        let votedStatus = false;
-
         if (targetElectionId) {
-          candidateData = await candidateService.getByElection(targetElectionId).catch(() => []);
+          const [electionObj, candidateData] = await Promise.all([
+            electionService.getById(targetElectionId).catch(() => null),
+            candidateService.getByElection(targetElectionId).catch(() => []),
+          ]);
+
+          setCurrentElection(electionObj);
+          setCandidates(candidateData);
+
           if (user && user.id) {
             const status = await voteService
               .getElectionVoteStatus(user.id, targetElectionId)
               .catch(() => ({ hasVoted: false }));
-            votedStatus = status.hasVoted;
+            setHasVoted(status.hasVoted);
+            if (status.hasVoted) setActiveStep(3);
           }
         } else {
-          candidateData = await organizationService.getCandidates(parsedOrganizationId).catch(() => []);
-          if (user && user.id) {
-            const status = await organizationService
-              .getVoteStatus(user.id, parsedOrganizationId)
-              .catch(() => ({ hasVoted: false }));
-            votedStatus = status.hasVoted;
-          }
+          setCandidates([]);
         }
-
-        setCandidates(candidateData);
-        setHasVoted(votedStatus);
-        if (votedStatus) setActiveStep(3);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Unable to load voting data.",
@@ -102,10 +90,10 @@ const Vote = () => {
     };
 
     void loadInitialData();
-  }, [organizationId, user]);
+  }, [electionId, organizationId, user]);
 
-  const handleElectionChange = async (electionId: number) => {
-    setSelectedElectionId(electionId);
+  const handleElectionChange = async (targetId: number) => {
+    setSelectedElectionId(targetId);
     setSelectedCandidate(null);
     setSubmitted(false);
     setActiveStep(1);
@@ -113,12 +101,17 @@ const Vote = () => {
     setError("");
 
     try {
-      const candidateData = await candidateService.getByElection(electionId).catch(() => []);
+      const [electionObj, candidateData] = await Promise.all([
+        electionService.getById(targetId).catch(() => null),
+        candidateService.getByElection(targetId).catch(() => []),
+      ]);
+
+      setCurrentElection(electionObj);
       setCandidates(candidateData);
 
       if (user && user.id) {
         const status = await voteService
-          .getElectionVoteStatus(user.id, electionId)
+          .getElectionVoteStatus(user.id, targetId)
           .catch(() => ({ hasVoted: false }));
         setHasVoted(status.hasVoted);
         if (status.hasVoted) setActiveStep(3);
@@ -195,8 +188,8 @@ const Vote = () => {
             <HiOutlineShieldCheck /> SECURE DIGITAL BALLOT
           </span>
           <h1>
-            {organization
-              ? `Vote in ${organization.name}`
+            {currentElection
+              ? currentElection.title
               : "Official Election Ballot"}
           </h1>
           <p>
@@ -227,7 +220,7 @@ const Vote = () => {
         {/* Active Election Selector */}
         {elections.length > 1 && !hasVoted && activeStep === 1 && (
           <div className="election-selector">
-            <label>Active Election Event: </label>
+            <label>Select Election: </label>
             <select
               value={selectedElectionId ?? ""}
               onChange={(e) => void handleElectionChange(Number(e.target.value))}
@@ -278,8 +271,8 @@ const Vote = () => {
                 <span className="receipt-value">{receiptTime || new Date().toUTCString()}</span>
               </div>
               <div className="receipt-row">
-                <span className="receipt-label">Organization</span>
-                <span className="receipt-value">{organization?.name ?? "VoteSecure Platform"}</span>
+                <span className="receipt-label">Election</span>
+                <span className="receipt-value">{currentElection?.title ?? "VoteSecure Platform"}</span>
               </div>
               <div className="receipt-row token-row">
                 <span className="receipt-label">Audit Token</span>
@@ -301,11 +294,11 @@ const Vote = () => {
             <div className="modal-actions">
               <Button
                 text="View Live Results"
-                onClick={() => navigate(`/results/${organizationId}`)}
+                onClick={() => navigate(`/results/${selectedElectionId}`)}
               />
               <Button
-                text="Return to Organizations"
-                onClick={() => navigate("/organizations")}
+                text="Return to Elections"
+                onClick={() => navigate("/elections")}
               />
             </div>
           </div>
@@ -336,7 +329,7 @@ const Vote = () => {
                       <div className="candidate-info">
                         <h3>{candidate.name}</h3>
                         <p>{candidate.party ?? "Independent Candidate"}</p>
-                        <span className="tag">Verified Nominee</span>
+                        <span className="tag">Verified Candidate</span>
                       </div>
                       <div className="select-box">
                         {isSelected ? <HiOutlineCheckCircle className="check-animated" /> : <div className="unselected-dot" />}
@@ -369,8 +362,8 @@ const Vote = () => {
                   disabled={!selectedCandidate}
                 />
                 <Button
-                  text="Back to Organizations"
-                  onClick={() => navigate("/organizations")}
+                  text="Back to Elections"
+                  onClick={() => navigate("/elections")}
                 />
               </div>
             </div>

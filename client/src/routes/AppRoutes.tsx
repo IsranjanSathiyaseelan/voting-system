@@ -12,13 +12,11 @@ import UserGuard from "../components/user/UserGuard";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 
+import Elections from "../pages/Elections/Elections";
 import Vote from "../pages/Vote/Vote";
 import Results from "../pages/Results/Results";
-import Organizations from "../pages/Organizations/Organizations";
 
 import AdminDashboard from "../pages/Admin/AdminDashboard";
-import AdminCandidates from "../pages/Admin/AdminCandidates";
-import AdminOrganizations from "../pages/Admin/AdminOrganizations";
 import AdminElections from "../pages/Admin/AdminElections";
 import AdminLogin from "../pages/Admin/AdminLogin";
 
@@ -33,16 +31,14 @@ const AppRoutes = () => {
       {/* User Routes */}
       <Route element={<UserGuard />}>
         <Route element={<MainLayout />}>
-          <Route path="/organizations" element={<Organizations />} />
-          <Route path="/vote/:organizationId" element={<Vote />} />
-          <Route path="/results/:organizationId" element={<Results />} />
+          <Route path="/elections" element={<Elections />} />
+          <Route path="/vote/:electionId" element={<Vote />} />
+          <Route path="/vote" element={<Vote />} />
+          <Route path="/results/:electionId" element={<Results />} />
+          <Route path="/results" element={<Results />} />
           <Route
-            path="/vote"
-            element={<Navigate to="/organizations" replace />}
-          />
-          <Route
-            path="/results"
-            element={<Navigate to="/organizations" replace />}
+            path="/organizations"
+            element={<Navigate to="/elections" replace />}
           />
         </Route>
       </Route>
@@ -55,11 +51,20 @@ const AppRoutes = () => {
             element={<Navigate to="/admin/dashboard" replace />}
           />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/organizations" element={<AdminOrganizations />} />
           <Route path="/admin/elections" element={<AdminElections />} />
-          <Route path="/admin/candidates" element={<AdminCandidates />} />
+          <Route
+            path="/admin/organizations"
+            element={<Navigate to="/admin/dashboard" replace />}
+          />
+          <Route
+            path="/admin/candidates"
+            element={<Navigate to="/admin/dashboard" replace />}
+          />
         </Route>
       </Route>
+
+      {/* Wildcard Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

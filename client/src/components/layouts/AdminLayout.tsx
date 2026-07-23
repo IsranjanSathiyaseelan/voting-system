@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  HiOutlineOfficeBuilding,
   HiOutlineViewGrid,
-  HiOutlineUsers,
   HiOutlineDocumentText,
   HiOutlineLogout,
   HiOutlineChevronLeft,
@@ -73,30 +71,12 @@ const AdminLayout = () => {
           </NavLink>
 
           <NavLink
-            to="/admin/organizations"
-            className={({ isActive }) => (isActive ? styles.active : "")}
-            title="Organizations"
-          >
-            <HiOutlineOfficeBuilding />
-            {!collapsed && <span>Organizations</span>}
-          </NavLink>
-
-          <NavLink
             to="/admin/elections"
             className={({ isActive }) => (isActive ? styles.active : "")}
             title="Elections"
           >
             <HiOutlineDocumentText />
             {!collapsed && <span>Elections</span>}
-          </NavLink>
-
-          <NavLink
-            to="/admin/candidates"
-            className={({ isActive }) => (isActive ? styles.active : "")}
-            title="Candidates"
-          >
-            <HiOutlineUsers />
-            {!collapsed && <span>Candidates</span>}
           </NavLink>
         </nav>
 

@@ -1,32 +1,17 @@
-import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   HiOutlineChartBar,
   HiOutlineLogout,
   HiOutlineUserCircle,
   HiOutlineShieldCheck,
-  HiOutlineOfficeBuilding,
 } from "react-icons/hi";
 import { FaVoteYea } from "react-icons/fa";
 import styles from "./Navbar.module.css";
 import { useAuth } from "../../hooks/useAuth";
-import { organizationService } from "../../services/organizationService";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [orgName, setOrgName] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user?.organizationId) {
-      organizationService
-        .getById(user.organizationId)
-        .then((org) => setOrgName(org.name))
-        .catch(() => setOrgName(null));
-    } else {
-      setOrgName(null);
-    }
-  }, [user?.organizationId]);
 
   const handleLogout = () => {
     logout();
@@ -49,7 +34,7 @@ const Navbar = () => {
           isAdmin
             ? "/admin/dashboard"
             : user
-              ? "/organizations"
+              ? "/elections"
               : "/"
         }
         className={styles.logo}
@@ -61,15 +46,15 @@ const Navbar = () => {
         {user ? (
           <>
             <NavLink
-              to="/organizations"
+              to="/elections"
               className={({ isActive }) => (isActive ? styles.active : "")}
             >
               <FaVoteYea />
-              Organizations
+              Elections
             </NavLink>
 
             <NavLink
-              to="/organizations"
+              to="/results"
               className={({ isActive }) => (isActive ? styles.active : "")}
             >
               <HiOutlineChartBar />
@@ -90,19 +75,6 @@ const Navbar = () => {
               <HiOutlineUserCircle />
               <div>
                 <span style={{ fontWeight: 600 }}>{user.username}</span>
-                {orgName && (
-                  <div
-                    style={{
-                      fontSize: "0.75rem",
-                      color: "#60a5fa",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    <HiOutlineOfficeBuilding /> {orgName}
-                  </div>
-                )}
               </div>
             </div>
 

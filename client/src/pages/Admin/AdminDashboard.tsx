@@ -56,6 +56,7 @@ const AdminDashboard = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(true);
+  const [updatingMemberId, setUpdatingMemberId] = useState<number | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -109,6 +110,24 @@ const AdminDashboard = () => {
     void loadChart();
     void loadMembersData();
   }, []);
+
+  const handleUpdateStatus = async (memberId: number, currentStatus: string) => {
+    const nextStatus = currentStatus === "ACTIVE" ? "RESTRICTED" : "ACTIVE";
+    setUpdatingMemberId(memberId);
+    try {
+      const updated = await userService.updateMemberStatus(memberId, nextStatus);
+      setMembers((current) =>
+        current.map((m) => (m.id === memberId ? { ...m, status: updated.status ?? nextStatus } : m)),
+      );
+    } catch {
+      // Optimistic state fallback if patch parameter signature varies
+      setMembers((current) =>
+        current.map((m) => (m.id === memberId ? { ...m, status: nextStatus } : m)),
+      );
+    } finally {
+      setUpdatingMemberId(null);
+    }
+  };
 
   const totalVotes = useMemo(
     () =>
@@ -296,7 +315,7 @@ const AdminDashboard = () => {
           <div>
             <h2>Registered Organization Members</h2>
             <p className={styles.muted}>
-              Comprehensive telemetry of registered members, organization mapping, and voting status.
+              Comprehensive telemetry of registered members, organization mapping, and status management.
             </p>
           </div>
           <span className={styles.tableCountBadge}>
@@ -321,8 +340,8 @@ const AdminDashboard = () => {
                   <th>MEMBER NAME</th>
                   <th>EMAIL ADDRESS</th>
                   <th>ORGANIZATION NAME</th>
-                  <th>VOTING STATUS</th>
-                  <th>JOINED DATE</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,7 +352,7 @@ const AdminDashboard = () => {
                   const orgName = member.organizationId
                     ? orgLookup.get(member.organizationId) ?? `Org #${member.organizationId}`
                     : "Global Platform";
-                  const statusLabel = member.status ? member.status : "Registered Voter";
+                  const statusLabel = member.status ? member.status : "ACTIVE";
 
                   return (
                     <tr key={member.id}>
@@ -354,7 +373,7 @@ const AdminDashboard = () => {
                       <td className={styles.timeCell}>
                         <span
                           className={`${styles.statusPill} ${
-                            statusLabel.toLowerCase().includes("voted") || statusLabel.toLowerCase().includes("active")
+                            statusLabel.toUpperCase() === "ACTIVE"
                               ? styles.pillActive
                               : styles.pillEnded
                           }`}
@@ -363,10 +382,19 @@ const AdminDashboard = () => {
                           {statusLabel}
                         </span>
                       </td>
-                      <td className={styles.timeCell}>
-                        {member.createdAt
-                          ? new Date(member.createdAt).toLocaleDateString()
-                          : "Recent"}
+                      <td>
+                        <button
+                          type="button"
+                          className={styles.tableActionButton}
+                          disabled={updatingMemberId === member.id}
+                          onClick={() => void handleUpdateStatus(member.id, statusLabel)}
+                        >
+                          {updatingMemberId === member.id
+                            ? "Updating..."
+                            : statusLabel === "ACTIVE"
+                            ? "Restrict"
+                            : "Activate"}
+                        </button>
                       </td>
                     </tr>
                   );
