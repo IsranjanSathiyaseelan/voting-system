@@ -6,8 +6,16 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
+import {
+  HiOutlineDocumentReport,
+  HiOutlineTable,
+  HiOutlineArrowLeft,
+  HiOutlineBadgeCheck,
+  HiOutlineChartBar,
+  HiOutlineUsers,
+  HiOutlineCheckCircle,
+} from "react-icons/hi";
 import { organizationService } from "../../services/organizationService";
 import { candidateService } from "../../services/candidateService";
 import { reportService } from "../../services/reportService";
@@ -17,13 +25,16 @@ import type { Election } from "../../types/election";
 
 import "./Results.css";
 
+const CHART_COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6"];
+
 const Results = () => {
   const [results, setResults] = useState<Candidate[]>([]);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [elections, setElections] = useState<Election[]>([]);
   const [selectedElectionId, setSelectedElectionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { organizationId } = useParams();
@@ -36,7 +47,7 @@ const Results = () => {
       const parsedOrganizationId = Number(organizationId);
 
       if (!organizationId || Number.isNaN(parsedOrganizationId)) {
-        setError("Invalid organization.");
+        setError("Invalid organization selected.");
         setLoading(false);
         return;
       }
@@ -64,7 +75,7 @@ const Results = () => {
         setResults(data);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Unable to load results.",
+          err instanceof Error ? err.message : "Unable to load election results.",
         );
       } finally {
         setLoading(false);
@@ -83,7 +94,7 @@ const Results = () => {
       const data = await candidateService.getResultsByElection(electionId);
       setResults(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load election results.");
+      setError(err instanceof Error ? err.message : "Failed to load results for this election.");
     } finally {
       setLoading(false);
     }
@@ -91,25 +102,25 @@ const Results = () => {
 
   const handleExportPdf = async () => {
     if (!selectedElectionId) return;
-    setExporting(true);
+    setExportingPdf(true);
     try {
       await reportService.exportPdf(selectedElectionId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to export PDF report.");
     } finally {
-      setExporting(false);
+      setExportingPdf(false);
     }
   };
 
   const handleExportExcel = async () => {
     if (!selectedElectionId) return;
-    setExporting(true);
+    setExportingExcel(true);
     try {
       await reportService.exportExcel(selectedElectionId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to export Excel report.");
     } finally {
-      setExporting(false);
+      setExportingExcel(false);
     }
   };
 
@@ -118,141 +129,238 @@ const Results = () => {
     [results],
   );
 
+  const sortedCandidates = useMemo(() => {
+    return [...results].sort((a, b) => b.voteCount - a.voteCount);
+  }, [results]);
+
+  const leader = sortedCandidates[0] && sortedCandidates[0].voteCount > 0 ? sortedCandidates[0] : null;
+
   return (
     <div className="results-page">
-      {/* HEADER */}
-      <div className="results-header">
-        <span className="badge">Election Results</span>
-        <h1>
-          {organization
-            ? `${organization.name} Results`
-            : "Live Voting Dashboard"}
-        </h1>
-        <p>Real-time vote distribution for this organization</p>
-      </div>
-
-      {elections.length > 1 && (
-        <div style={{ marginBottom: "20px", textAlign: "center" }}>
-          <label style={{ marginRight: "10px", fontWeight: "bold" }}>Filter by Election: </label>
-          <select
-            value={selectedElectionId ?? ""}
-            onChange={(e) => void handleElectionSelect(Number(e.target.value))}
-            style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ccc" }}
+      <div className="results-shell">
+        {/* Navigation Header */}
+        <div className="results-top-nav">
+          <button
+            type="button"
+            className="btn-text-back"
+            onClick={() => navigate(-1)}
           >
-            {elections.map((election) => (
-              <option key={election.id} value={election.id}>
-                {election.title}
-              </option>
-            ))}
-          </select>
+            <HiOutlineArrowLeft /> Back
+          </button>
         </div>
-      )}
 
-      {/* TOP STATS */}
-      {loading ? (
-        <p>Loading results…</p>
-      ) : error ? (
-        <p className="error">{error}</p>
-      ) : results.length === 0 ? (
-        <p>No results are available yet for this election.</p>
-      ) : (
-        <>
-          <div className="stats-row">
-            <div className="stat-card">
-              <h2>{totalVotes}</h2>
-              <p>Total Votes</p>
-            </div>
-
-            <div className="stat-card">
-              <h2>{results.length}</h2>
-              <p>Candidates</p>
-            </div>
-
-            <div className="stat-card">
-              <h2>Live</h2>
-              <p>Status</p>
-            </div>
+        <div className="results-hero">
+          <div className="hero-details">
+            <span className="badge">Verified Analytics</span>
+            <h1>
+              {organization ? `${organization.name} Results` : "Election Dashboard"}
+            </h1>
+            <p>Real-time encrypted ballot tallying and distribution analytics.</p>
           </div>
 
-          <div className="results-grid">
-            <div className="card">
-              <h2>Vote Breakdown</h2>
-
-              <div className="list">
-                {results.map((candidate) => (
-                  <div key={candidate.id} className="list-item">
-                    <div className="dot" />
-                    <div className="info">
-                      <h3>{candidate.name}</h3>
-                      <p>{candidate.voteCount} votes</p>
-                    </div>
-                  </div>
+          {/* Election Dropdown Selector */}
+          {elections.length > 0 && (
+            <div className="election-selector-box">
+              <label htmlFor="election-select">Active Election</label>
+              <select
+                id="election-select"
+                value={selectedElectionId ?? ""}
+                onChange={(e) => void handleElectionSelect(Number(e.target.value))}
+                className="select-input"
+              >
+                {elections.map((election) => (
+                  <option key={election.id} value={election.id}>
+                    {election.title}
+                  </option>
                 ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Dynamic Content */}
+        {loading ? (
+          <div className="skeleton-grid">
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+          </div>
+        ) : error ? (
+          <div className="error-card">
+            <p>{error}</p>
+          </div>
+        ) : results.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📊</div>
+            <h3>No Votes Recorded</h3>
+            <p>There are no votes or candidate records available for this election yet.</p>
+          </div>
+        ) : (
+          <>
+            {/* Top Stat Summary Cards */}
+            <div className="stats-row">
+              <div className="stat-card">
+                <div className="stat-icon-wrapper blue">
+                  <HiOutlineChartBar />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-label">Total Ballots</span>
+                  <h2 className="stat-value">{totalVotes.toLocaleString()}</h2>
+                </div>
               </div>
 
-              <div className="total">
-                Total ballots: <strong>{totalVotes}</strong>
+              <div className="stat-card">
+                <div className="stat-icon-wrapper indigo">
+                  <HiOutlineUsers />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-label">Candidates</span>
+                  <h2 className="stat-value">{results.length}</h2>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon-wrapper emerald">
+                  <HiOutlineCheckCircle />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-label">Tally Status</span>
+                  <h2 className="stat-value status-live">Live Sync</h2>
+                </div>
               </div>
             </div>
 
-            <div className="card chart-card">
-              <h2>Vote Share</h2>
+            {/* Results Grid */}
+            <div className="results-grid">
+              {/* Vote Breakdown Column */}
+              <div className="card breakdown-card">
+                <div className="card-header">
+                  <h2>Candidate Breakdown</h2>
+                  <span className="total-badge">{totalVotes} Total Votes</span>
+                </div>
 
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={results}
-                    dataKey="voteCount"
-                    nameKey="name"
-                    outerRadius={100}
-                  >
-                    {results.map((entry, index) => (
-                      <Cell
-                        key={entry.id}
-                        fill={["#4f46e5", "#0f766e", "#f59e0b", "#ec4899", "#8b5cf6"][index % 5]}
+                <div className="candidate-list">
+                  {sortedCandidates.map((candidate, idx) => {
+                    const percentage = totalVotes > 0 ? ((candidate.voteCount / totalVotes) * 100).toFixed(1) : "0.0";
+                    const isLeader = leader?.id === candidate.id;
+                    const color = CHART_COLORS[idx % CHART_COLORS.length];
+
+                    return (
+                      <div key={candidate.id} className={`candidate-item ${isLeader ? "is-leader" : ""}`}>
+                        <div className="candidate-top">
+                          <div className="candidate-name-box">
+                            <span className="color-indicator" style={{ backgroundColor: color }} />
+                            <span className="candidate-name">{candidate.name}</span>
+                            {isLeader && (
+                              <span className="leader-tag">
+                                <HiOutlineBadgeCheck /> Leader
+                              </span>
+                            )}
+                          </div>
+                          <div className="candidate-metrics">
+                            <span className="vote-count">{candidate.voteCount} votes</span>
+                            <span className="percentage-text">{percentage}%</span>
+                          </div>
+                        </div>
+
+                        {/* Visual Progress Bar */}
+                        <div className="progress-track">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${percentage}%`, backgroundColor: color }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Chart Column */}
+              <div className="card chart-card">
+                <div className="card-header">
+                  <h2>Vote Share Distribution</h2>
+                </div>
+
+                <div className="chart-wrapper">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={results}
+                        dataKey="voteCount"
+                        nameKey="name"
+                        innerRadius={65}
+                        outerRadius={95}
+                        paddingAngle={4}
+                      >
+                        {results.map((entry, index) => (
+                          <Cell
+                            key={`cell-${entry.id}`}
+                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#0f172a",
+                          borderRadius: "10px",
+                          color: "#fff",
+                          border: "none",
+                          fontSize: "0.85rem",
+                          boxShadow: "0 10px 20px rgba(0,0,0,0.15)",
+                        }}
+                        itemStyle={{ color: "#fff" }}
                       />
-                    ))}
-                  </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
 
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+                  {/* Donut Chart Center Text */}
+                  <div className="chart-center-text">
+                    <span className="center-value">{totalVotes}</span>
+                    <span className="center-label">Votes</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div style={{ marginTop: "20px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            {selectedElectionId && (
-              <>
-                <button
-                  type="button"
-                  className="back-button"
-                  onClick={() => void handleExportPdf()}
-                  disabled={exporting}
-                >
-                  {exporting ? "Exporting..." : "Download PDF Report"}
-                </button>
-                <button
-                  type="button"
-                  className="back-button"
-                  onClick={() => void handleExportExcel()}
-                  disabled={exporting}
-                >
-                  {exporting ? "Exporting..." : "Download Excel Report"}
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              className="back-button"
-              style={{ background: "#6b7280" }}
-              onClick={() => navigate("/organizations")}
-            >
-              Back to organizations
-            </button>
-          </div>
-        </>
-      )}
+            {/* Action & Export Controls */}
+            <div className="export-toolbar">
+              <div className="export-group">
+                {selectedElectionId && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn-export pdf"
+                      onClick={() => void handleExportPdf()}
+                      disabled={exportingPdf}
+                    >
+                      <HiOutlineDocumentReport />
+                      {exportingPdf ? "Generating PDF..." : "Export PDF Report"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-export excel"
+                      onClick={() => void handleExportExcel()}
+                      disabled={exportingExcel}
+                    >
+                      <HiOutlineTable />
+                      {exportingExcel ? "Generating Excel..." : "Export Excel Sheet"}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => navigate("/elections")}
+              >
+                Back to Elections
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };

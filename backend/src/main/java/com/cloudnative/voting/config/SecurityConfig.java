@@ -50,6 +50,11 @@ public class SecurityConfig {
                         "/v3/api-docs.yaml"
                 ).permitAll()
 
+                            .requestMatchers(
+                                    HttpMethod.GET,
+                                    "/api/organizations/public"
+                            ).permitAll()
+
                 // Actuator: health/info public, metrics require auth
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/actuator/**").authenticated()

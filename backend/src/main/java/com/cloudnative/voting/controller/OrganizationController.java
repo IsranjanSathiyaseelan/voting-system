@@ -95,6 +95,11 @@ public class OrganizationController {
         return userService.getMembersByOrganization(id);
     }
 
+    @GetMapping("/public")
+    public List<Organization> getPublicOrganizations() {
+        return organizationService.getAll();
+    }
+
     /**
      * Dashboard statistics for the authenticated user's org.
      * Aggregates: members, elections (total/active), votes, polls.

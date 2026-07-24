@@ -1,9 +1,8 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
-  HiOutlineChartBar,
   HiOutlineLogout,
-  HiOutlineUserCircle,
   HiOutlineShieldCheck,
+  HiOutlineLockClosed,
 } from "react-icons/hi";
 import { FaVoteYea } from "react-icons/fa";
 import styles from "./Navbar.module.css";
@@ -29,66 +28,84 @@ const Navbar = () => {
 
   return (
     <header className={styles.navbar}>
-      <Link
-        to={
-          isAdmin
-            ? "/admin/dashboard"
-            : user
-              ? "/elections"
-              : "/"
-        }
-        className={styles.logo}
-      >
-        <span>VoteSecure</span>
-      </Link>
+      <div className={styles.container}>
+        {/* Brand / Logo */}
+        <Link
+          to={
+            isAdmin
+              ? "/admin/dashboard"
+              : user
+                ? "/elections"
+                : "/"
+          }
+          className={styles.logo}
+        >
+          <div className={styles.logoBadge}>
+            <HiOutlineLockClosed />
+          </div>
+          <span className={styles.logoText}>
+            Vote<span className={styles.logoHighlight}>Secure</span>
+          </span>
+        </Link>
 
-      <nav className={styles.navLinks}>
-        {user ? (
-          <>
-            <NavLink
-              to="/elections"
-              className={({ isActive }) => (isActive ? styles.active : "")}
-            >
-              <FaVoteYea />
-              Elections
-            </NavLink>
+        {/* Navigation Area */}
+        <nav className={styles.navWrapper}>
+          {user ? (
+            <>
+              {/* Primary Navigation Links */}
+              <div className={styles.navLinks}>
+                <NavLink
+                  to="/elections"
+                  className={({ isActive }) =>
+                    `${styles.navItem} ${isActive ? styles.active : ""}`
+                  }
+                >
+                  <FaVoteYea className={styles.linkIcon} />
+                  <span>Elections</span>
+                </NavLink>
 
-            <NavLink
-              to="/results"
-              className={({ isActive }) => (isActive ? styles.active : "")}
-            >
-              <HiOutlineChartBar />
-              Results
-            </NavLink>
-
-            {isAdmin && (
-              <NavLink
-                to="/admin/dashboard"
-                className={({ isActive }) => (isActive ? styles.active : "")}
-              >
-                <HiOutlineShieldCheck />
-                Admin Panel
-              </NavLink>
-            )}
-
-            <div className={styles.profile}>
-              <HiOutlineUserCircle />
-              <div>
-                <span style={{ fontWeight: 600 }}>{user.username}</span>
+                {isAdmin && (
+                  <NavLink
+                    to="/admin/dashboard"
+                    className={({ isActive }) =>
+                      `${styles.navItem} ${isActive ? styles.active : ""}`
+                    }
+                  >
+                    <HiOutlineShieldCheck className={styles.linkIcon} />
+                    <span>Admin Panel</span>
+                  </NavLink>
+                )}
               </div>
-            </div>
 
-            <button onClick={handleLogout} className={styles.logoutBtn}>
-              <HiOutlineLogout />
-              Logout
-            </button>
-          </>
-        ) : (
-          <Link to="/" className={styles.loginBtn}>
-            Login
-          </Link>
-        )}
-      </nav>
+              {/* User Profile & Actions */}
+              <div className={styles.userControls}>
+                <div className={styles.profileChip}>
+                  <div className={styles.avatar}>
+                    {user.username ? user.username.charAt(0).toUpperCase() : "U"}
+                  </div>
+                  <div className={styles.profileDetails}>
+                    <span className={styles.userName}>{user.username}</span>
+                    {isAdmin && <span className={styles.roleBadge}>Admin</span>}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className={styles.logoutBtn}
+                  title="Sign out of your account"
+                >
+                  <HiOutlineLogout className={styles.logoutIcon} />
+                  <span className={styles.logoutText}>Logout</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <Link to="/" className={styles.loginBtn}>
+              Login
+            </Link>
+          )}
+        </nav>
+      </div>
     </header>
   );
 };

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
 import Button from "../../common/Button/Button";
 import styles from "./Login.module.css";
 import { useAuth } from "../../hooks/useAuth";
@@ -10,6 +9,7 @@ import SignUp from "../../assets/SignUp.jpg";
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +24,12 @@ const Login = () => {
     try {
       const user = await authService.login({ username, password });
       login(user);
-      const isAdmin = ["SUPER_ADMIN", "ORGANIZATION_ADMIN", "ELECTION_MANAGER", "ADMIN"].includes(user.role);
+      const isAdmin = [
+        "SUPER_ADMIN",
+        "ORGANIZATION_ADMIN",
+        "ELECTION_MANAGER",
+        "ADMIN",
+      ].includes(user.role);
       navigate(isAdmin ? "/admin/dashboard" : "/organizations");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sign in.");
@@ -35,36 +40,58 @@ const Login = () => {
 
   return (
     <div className={styles.container}>
-      {/* Left Side */}
+      {/* Left Visual Banner */}
       <div className={styles.left}>
-        <img src={SignUp} alt="Sign Up" />
+        <img src={SignUp} alt="Sign In Visual" />
+        <div className={styles.overlay}>
+          <h3>Welcome back</h3>
+          <p>Sign in to access your dashboard and participate in active elections.</p>
+        </div>
       </div>
 
-      {/* Right Side */}
+      {/* Right Form Section */}
       <div className={styles.right}>
         <form className={styles.form} onSubmit={handleSubmit}>
-          <h2>Sign in</h2>
-          <p className={styles.subtitle}>
-            Welcome back! Please sign in to continue
-          </p>
+          <div className={styles.header}>
+            <h2>Sign in</h2>
+            <p className={styles.subtitle}>
+              Please enter your details to access your account
+            </p>
+          </div>
 
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+          <div className={styles.inputGroup}>
+            <input
+              id="login-username"
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className={styles.inputGroup}>
+            <div className={styles.passwordWrapper}>
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className={styles.togglePassword}
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
 
-          {error && <p className={styles.error}>{error}</p>}
+          {error && <div className={styles.error}>{error}</div>}
 
           <Button
             text={loading ? "Signing in..." : "Login"}
