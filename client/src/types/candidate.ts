@@ -6,3 +6,11 @@ export interface Candidate {
   organizationId?: number | null;
   party?: string;
 }
+
+export interface AddCandidatePayload {
+  name: string;
+  party?: string;
+  voteCount?: number;
+  electionId?: number;
+  organizationId?: number;
+}

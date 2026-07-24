@@ -1,12 +1,8 @@
 package com.cloudnative.voting.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
-/**
- * A Candidate belongs to one Election, which belongs to one Organization.
- * This establishes the Candidate -> Election -> Organization hierarchy.
- */
 @Entity
 @Table(name = "candidate")
 public class Candidate {
@@ -15,27 +11,32 @@ public class Candidate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
-    private int voteCount;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    private String party;
+
+    @Column(name = "vote_count")
+    private Integer voteCount = 0;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "election_id")
-    @JsonIgnore
     private Election election;
 
-    /** Kept for backward-compatibility with legacy org-level queries. */
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id")
-    @JsonIgnore
     private Organization organization;
 
-    public Candidate() {}
+    // Transient fields for receiving JSON IDs from API requests
+    @Transient
+    @JsonProperty("electionId")
+    private Long electionId;
 
-    public Candidate(Long id, String name, int voteCount) {
-        this.id = id;
-        this.name = name;
-        this.voteCount = voteCount;
-    }
+    @Transient
+    @JsonProperty("organizationId")
+    private Long organizationId;
+
+    public Candidate() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -43,28 +44,37 @@ public class Candidate {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public int getVoteCount() { return voteCount; }
-    public void setVoteCount(int voteCount) { this.voteCount = voteCount; }
+    public String getParty() { return party; }
+    public void setParty(String party) { this.party = party; }
+
+    public Integer getVoteCount() { return voteCount; }
+    public void setVoteCount(Integer voteCount) { this.voteCount = voteCount; }
 
     public Election getElection() { return election; }
-    public void setElection(Election election) {
-        this.election = election;
-        // Keep organization in sync for legacy queries
-        if (election != null) {
-            this.organization = election.getOrganization();
-        }
-    }
-
-    public Long getElectionId() {
-        return election != null ? election.getId() : null;
-    }
+    public void setElection(Election election) { this.election = election; }
 
     public Organization getOrganization() { return organization; }
     public void setOrganization(Organization organization) { this.organization = organization; }
 
+    public Long getElectionId() {
+        if (this.electionId != null) {
+            return this.electionId;
+        }
+        return this.election != null ? this.election.getId() : null;
+    }
+
+    public void setElectionId(Long electionId) {
+        this.electionId = electionId;
+    }
+
     public Long getOrganizationId() {
-        if (organization != null) return organization.getId();
-        if (election != null && election.getOrganization() != null) return election.getOrganization().getId();
-        return null;
+        if (this.organizationId != null) {
+            return this.organizationId;
+        }
+        return this.organization != null ? this.organization.getId() : null;
+    }
+
+    public void setOrganizationId(Long organizationId) {
+        this.organizationId = organizationId;
     }
 }

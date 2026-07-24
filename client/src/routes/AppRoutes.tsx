@@ -18,7 +18,6 @@ import Results from "../pages/Results/Results";
 
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import AdminElections from "../pages/Admin/AdminElections";
-import AdminLogin from "../pages/Admin/AdminLogin";
 
 const AppRoutes = () => {
   return (
@@ -26,7 +25,6 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/" element={<Register />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
 
       {/* User Routes */}
       <Route element={<UserGuard />}>
