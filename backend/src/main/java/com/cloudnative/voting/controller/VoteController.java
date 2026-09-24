@@ -8,6 +8,7 @@ import com.cloudnative.voting.service.VoteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -28,15 +29,26 @@ public class VoteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
     }
 
-    /** Check if a user has voted in an org (legacy support). */
+    /**
+     * Check if a user has voted in an org.
+     * Enforces that the organizationId matches the caller's own organization.
+     */
     @GetMapping("/status")
     public VoteStatusResponse getVoteStatus(
             @RequestParam Long userId,
             @RequestParam Long organizationId) {
+        Long callerOrgId = SecurityUtils.getCurrentOrganizationId();
+        if (!callerOrgId.equals(organizationId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Access denied: you can only check vote status for your own organization");
+        }
         return new VoteStatusResponse(voteService.hasUserVotedInOrganization(userId, organizationId));
     }
 
-    /** Check if a user has voted in a specific election. */
+    /**
+     * Check if a user has voted in a specific election.
+     * The election is validated against the caller's org in the service layer.
+     */
     @GetMapping("/status/election")
     public VoteStatusResponse getElectionVoteStatus(
             @RequestParam Long userId,

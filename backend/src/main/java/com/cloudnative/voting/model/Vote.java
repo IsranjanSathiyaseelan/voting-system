@@ -10,9 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "vote",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "election_id"}, name = "uq_vote_user_election"),
-                // Legacy constraint kept for backward compatibility
-                @UniqueConstraint(columnNames = {"user_id", "organization_id"}, name = "uq_vote_user_org")
+                @UniqueConstraint(columnNames = {"user_id", "election_id"}, name = "uq_vote_user_election")
         })
 public class Vote {
 

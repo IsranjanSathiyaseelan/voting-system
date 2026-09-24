@@ -9,6 +9,7 @@ import com.cloudnative.voting.model.User;
 import com.cloudnative.voting.model.UserStatus;
 import com.cloudnative.voting.repository.OrganizationRepository;
 import com.cloudnative.voting.repository.UserRepository;
+import com.cloudnative.voting.config.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -157,10 +158,14 @@ public class UserService {
         return convertToResponse(updatedUser);
     }
 
-    /** List all members belonging to a given organization (tenant-scoped). */
+    /** List all members belonging to a given organization (tenant-scoped), excluding admin users (showing only regular members). */
     public List<UserResponse> getMembersByOrganization(Long organizationId) {
+        String currentUsername = SecurityUtils.getCurrentUsernameOrNull();
         return userRepository.findByOrganizationId(organizationId)
                 .stream()
+                .filter(u -> u.getRole() != Role.ORGANIZATION_ADMIN)
+                .filter(u -> u.getRole() == null || u.getRole() == Role.VOTER)
+                .filter(u -> currentUsername == null || !u.getUsername().equalsIgnoreCase(currentUsername))
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -172,6 +177,10 @@ public class UserService {
 
         if (user.getOrganization() == null || !user.getOrganization().getId().equals(callerOrgId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot manage members from another organization");
+        }
+
+        if (user.getRole() == Role.ORGANIZATION_ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot modify status of an admin user");
         }
 
         try {

@@ -1,28 +1,33 @@
-import styles from "./Button.module.css";
+import React from "react";
+import UiButton from "../../components/ui/Button";
+import type { ButtonProps } from "../../components/ui/Button";
 
-interface ButtonProps {
-  text: string;
-  type?: "button" | "submit";
-  onClick?: () => void;
-  disabled?: boolean;
-}
-
-const Button = ({
+const Button: React.FC<ButtonProps> = ({
   text,
+  children,
   type = "button",
   onClick,
   disabled = false,
-}: ButtonProps) => {
+  variant = "primary",
+  size = "md",
+  fullWidth = false,
+  ...rest
+}) => {
   return (
-    <button
-      className={styles.button}
+    <UiButton
+      text={text}
       type={type}
       onClick={onClick}
       disabled={disabled}
+      variant={variant}
+      size={size}
+      fullWidth={fullWidth}
+      {...rest}
     >
-      {text}
-    </button>
+      {children}
+    </UiButton>
   );
 };
 
 export default Button;
+export type { ButtonProps };

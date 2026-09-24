@@ -21,6 +21,15 @@ public final class SecurityUtils {
         return (TenantUserDetails) auth.getPrincipal();
     }
 
+    /** Returns the current user's organizationId, or null if they have none (no exception thrown). */
+    public static Long getCurrentOrganizationIdOrNull() {
+        try {
+            return getCurrentUser().getOrganizationId();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static Long getCurrentOrganizationId() {
         Long orgId = getCurrentUser().getOrganizationId();
         if (orgId == null) {
@@ -28,4 +37,14 @@ public final class SecurityUtils {
         }
         return orgId;
     }
+
+    /** Returns the current user's username, or null if unauthenticated. */
+    public static String getCurrentUsernameOrNull() {
+        try {
+            return getCurrentUser().getUsername();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
+

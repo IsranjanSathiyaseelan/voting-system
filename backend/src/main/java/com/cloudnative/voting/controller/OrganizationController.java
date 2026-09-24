@@ -13,7 +13,9 @@ import com.cloudnative.voting.repository.VoteRepository;
 import com.cloudnative.voting.service.CandidateService;
 import com.cloudnative.voting.service.OrganizationService;
 import com.cloudnative.voting.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -46,13 +48,22 @@ public class OrganizationController {
         this.pollRepository = pollRepository;
     }
 
+    /** List all organizations — returns only the caller's own organization. */
     @GetMapping
     public List<Organization> getAll() {
-        return organizationService.getAll();
+        Long callerOrgId = SecurityUtils.getCurrentOrganizationIdOrNull();
+        if (callerOrgId != null) {
+            Organization org = organizationService.getById(callerOrgId);
+            return List.of(org);
+        }
+        // Fallback for users without an org (should not normally happen)
+        return List.of();
     }
 
+    /** Get organization by ID — restricted to the caller's own organization. */
     @GetMapping("/{id}")
     public Organization getById(@PathVariable Long id) {
+        assertCallerOwnsOrg(id);
         return organizationService.getById(id);
     }
 
@@ -61,40 +72,49 @@ public class OrganizationController {
         return organizationService.create(organization);
     }
 
+    /** Update organization — restricted to the caller's own organization. */
     @PutMapping("/{id}")
     public Organization update(@PathVariable Long id, @RequestBody Organization organization) {
+        assertCallerOwnsOrg(id);
         return organizationService.update(id, organization);
     }
 
+    /** Delete organization — restricted to the caller's own organization. */
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
+        assertCallerOwnsOrg(id);
         organizationService.delete(id);
     }
 
-    /** Legacy: candidates for a given org. */
+    /** Candidates for a given org — restricted to caller's own organization. */
     @GetMapping("/{id}/candidates")
     public List<Candidate> getCandidates(@PathVariable Long id) {
+        assertCallerOwnsOrg(id);
         return candidateService.getCandidatesByOrganization(id);
     }
 
-    /** Legacy: results for a given org. */
+    /** Results for a given org — restricted to caller's own organization. */
     @GetMapping("/{id}/results")
     public List<Candidate> getResults(@PathVariable Long id) {
+        assertCallerOwnsOrg(id);
         return candidateService.getResultsByOrganization(id);
     }
 
-    /** Elections for a given org. */
+    /** Elections for a given org — restricted to caller's own organization. */
     @GetMapping("/{id}/elections")
     public List<Election> getElections(@PathVariable Long id) {
+        assertCallerOwnsOrg(id);
         return electionRepository.findByOrganizationId(id);
     }
 
-    /** Members (users) for a given org. */
+    /** Members (users) for a given org — restricted to caller's own organization. */
     @GetMapping("/{id}/members")
     public List<UserResponse> getMembers(@PathVariable Long id) {
+        assertCallerOwnsOrg(id);
         return userService.getMembersByOrganization(id);
     }
 
+    /** Public listing of organizations — available without authentication for registration. */
     @GetMapping("/public")
     public List<Organization> getPublicOrganizations() {
         return organizationService.getAll();
@@ -102,17 +122,33 @@ public class OrganizationController {
 
     /**
      * Dashboard statistics for the authenticated user's org.
-     * Aggregates: members, elections (total/active), votes, polls.
+     * Always scoped to the caller's organization from the JWT — never trusts client-sent IDs.
      */
     @GetMapping("/dashboard/stats")
     public DashboardStatsResponse getDashboardStats() {
         Long orgId = SecurityUtils.getCurrentOrganizationId();
-        long totalMembers    = userRepository.countByOrganizationId(orgId);
+
+        long totalMembers = userRepository.countByOrganizationId(orgId);
         List<Election> elections = electionRepository.findByOrganizationId(orgId);
+        long totalVotes = voteRepository.countByOrganizationId(orgId);
+        long totalPolls = pollRepository.countByOrganizationId(orgId);
+
         long totalElections  = elections.size();
         long activeElections = elections.stream().filter(Election::isActive).count();
-        long totalVotes      = voteRepository.countByOrganizationId(orgId);
-        long totalPolls      = pollRepository.countByOrganizationId(orgId);
         return new DashboardStatsResponse(totalMembers, totalElections, activeElections, totalVotes, totalPolls);
+    }
+
+    /**
+     * Asserts that the path-variable org ID matches the authenticated caller's organization.
+     * Throws 403 if there is a mismatch or the caller has no organization.
+     */
+    private void assertCallerOwnsOrg(Long pathOrgId) {
+        Long callerOrgId = SecurityUtils.getCurrentOrganizationId();
+        if (!callerOrgId.equals(pathOrgId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Access denied: you can only access your own organization's data"
+            );
+        }
     }
 }

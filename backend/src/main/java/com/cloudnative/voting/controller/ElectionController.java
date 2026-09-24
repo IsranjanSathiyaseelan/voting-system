@@ -12,6 +12,7 @@ import java.util.List;
 /**
  * REST controller for Election management.
  * All operations are scoped to the authenticated user's organization.
+ * Read endpoints fall back to returning all elections when the user has no org.
  */
 @RestController
 @RequestMapping("/api/elections")
@@ -25,17 +26,33 @@ public class ElectionController {
 
     @GetMapping
     public List<Election> getAll() {
-        return electionService.getElectionsByOrg(SecurityUtils.getCurrentOrganizationId());
+        Long orgId = SecurityUtils.getCurrentOrganizationIdOrNull();
+        if (orgId == null) {
+            return electionService.getAllElections();
+        }
+        return electionService.getElectionsByOrg(orgId);
     }
 
     @GetMapping("/active")
     public List<Election> getActive() {
-        return electionService.getActiveElectionsByOrg(SecurityUtils.getCurrentOrganizationId());
+        Long orgId = SecurityUtils.getCurrentOrganizationIdOrNull();
+        if (orgId == null) {
+            return electionService.getAllActiveElections();
+        }
+        return electionService.getActiveElectionsByOrg(orgId);
     }
 
     @GetMapping("/{id}")
     public Election getById(@PathVariable Long id) {
-        return electionService.getById(id, SecurityUtils.getCurrentOrganizationId());
+        Long orgId = SecurityUtils.getCurrentOrganizationIdOrNull();
+        if (orgId == null) {
+            return electionService.getAllElections().stream()
+                    .filter(e -> e.getId().equals(id))
+                    .findFirst()
+                    .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "Election not found"));
+        }
+        return electionService.getById(id, orgId);
     }
 
     @PostMapping
@@ -55,3 +72,4 @@ public class ElectionController {
         electionService.delete(id, SecurityUtils.getCurrentOrganizationId());
     }
 }
+

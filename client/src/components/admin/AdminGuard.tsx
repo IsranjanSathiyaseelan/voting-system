@@ -1,10 +1,13 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { authService } from "../../services/authService";
 
 const AdminGuard = () => {
   const { user } = useAuth();
-  if (!user) {
-    return <Navigate to="/admin/login" replace />;
+  const token = authService.getStoredToken();
+
+  if (!user || !token) {
+    return <Navigate to="/login" replace />;
   }
   const hasAdminRole = [
     "SUPER_ADMIN",

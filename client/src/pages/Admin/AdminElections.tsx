@@ -1,57 +1,56 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   HiOutlinePlus,
   HiOutlineTrash,
   HiOutlineRefresh,
   HiOutlineDocumentDownload,
   HiOutlineCalendar,
-  HiOutlineUserGroup,
-  HiOutlineCheckCircle,
-  HiOutlineXCircle,
 } from "react-icons/hi";
 import Button from "../../common/Button/Button";
+import { useAuth } from "../../hooks/useAuth";
 import { electionService } from "../../services/electionService";
 import { candidateService } from "../../services/candidateService";
 import { reportService } from "../../services/reportService";
-import { userService } from "../../services/userService";
 import type { Election } from "../../types/election";
-import type { User } from "../../types/auth";
+import type { Candidate } from "../../types/candidate";
 import styles from "./AdminElections.module.css";
 
 interface CandidateDraft {
-  memberId: number | null;
+  candidateId: number | null;
 }
 
 const AdminElections = () => {
+  const { user: currentUser } = useAuth();
   const [elections, setElections] = useState<Election[]>([]);
-  const [members, setMembers] = useState<User[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [active, setActive] = useState(true);
 
-  // Member dropdown draft state
+  // Candidate dropdown draft state
   const [candidateDrafts, setCandidateDrafts] = useState<CandidateDraft[]>([
-    { memberId: null },
+    { candidateId: null },
   ]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [exportingId, setExportingId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const loadData = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [electionsData, membersData] = await Promise.all([
+      const [electionsData, candidatesData] = await Promise.all([
         electionService.getAll(),
-        userService.getMembers().catch((): User[] => []),
+        candidateService.getCandidates().catch((): Candidate[] => []),
       ]);
       setElections(electionsData);
-      setMembers(membersData);
+      setCandidates(candidatesData);
     } catch (err) {
       setError(
         err instanceof Error
@@ -67,18 +66,42 @@ const AdminElections = () => {
     void loadData();
   }, []);
 
+  // Filter candidates for assignment: exclude admins, only show candidates belonging to the admin's organization
+  const assignableCandidates = useMemo(() => {
+    return candidates.filter((candidate) => {
+      // Must belong to the admin's organization
+      if (currentUser?.organizationId && candidate.organizationId) {
+        if (String(candidate.organizationId) !== String(currentUser.organizationId)) {
+          return false;
+        }
+      }
+
+      // Exclude admin users
+      if (currentUser) {
+        const cName = (candidate.name ?? "").trim().toLowerCase();
+        const adminUsername = (currentUser.username ?? "").trim().toLowerCase();
+        const adminEmail = (currentUser.email ?? "").trim().toLowerCase();
+        const adminFullName = `${currentUser.firstName ?? ""} ${currentUser.lastName ?? ""}`.trim().toLowerCase();
+        if (adminUsername && cName === adminUsername) return false;
+        if (adminFullName && cName === adminFullName) return false;
+        if (candidate.party && adminEmail && candidate.party.trim().toLowerCase() === adminEmail) return false;
+      }
+      return true;
+    });
+  }, [candidates, currentUser]);
+
   const handleAddCandidateRow = () => {
-    setCandidateDrafts((current) => [...current, { memberId: null }]);
+    setCandidateDrafts((current) => [...current, { candidateId: null }]);
   };
 
   const handleRemoveCandidateRow = (index: number) => {
     setCandidateDrafts((current) => current.filter((_, i) => i !== index));
   };
 
-  const handleCandidateMemberChange = (index: number, memberIdStr: string) => {
-    const memberId = memberIdStr ? Number(memberIdStr) : null;
+  const handleCandidateChange = (index: number, candidateIdStr: string) => {
+    const candidateId = candidateIdStr ? Number(candidateIdStr) : null;
     setCandidateDrafts((current) =>
-      current.map((draft, i) => (i === index ? { memberId } : draft)),
+      current.map((draft, i) => (i === index ? { candidateId } : draft)),
     );
   };
 
@@ -92,9 +115,9 @@ const AdminElections = () => {
 
     setSaving(true);
     setError("");
+    setSuccess("");
 
     try {
-      // Step 1: Create the election via API
       const created = await electionService.create({
         title: title.trim(),
         description: description.trim() || undefined,
@@ -113,31 +136,27 @@ const AdminElections = () => {
         throw new Error("Created election did not return a valid ID.");
       }
 
-      // Step 2: Attach selected organization members as candidates
-      const selectedMemberIds = candidateDrafts
-        .map((c) => c.memberId)
+      const selectedCandidateIds = candidateDrafts
+        .map((c) => c.candidateId)
         .filter((id): id is number => id !== null);
 
-      const uniqueMemberIds = Array.from(new Set(selectedMemberIds));
+      const uniqueCandidateIds = Array.from(new Set(selectedCandidateIds));
 
-      for (const memberId of uniqueMemberIds) {
-        const member = members.find((m) => m.id === memberId);
-        if (!member) continue;
+      for (const candidateId of uniqueCandidateIds) {
+        const candidate = assignableCandidates.find((c) => c.id === candidateId) || candidates.find((c) => c.id === candidateId);
+        if (!candidate) continue;
 
-        const fullName =
-          [member.firstName, member.lastName].filter(Boolean).join(" ") ||
-          member.username ||
-          `Member #${member.id}`;
-
-        await candidateService.addCandidate({
-          name: fullName,
-          party: member.email,
-          voteCount: 0,
-          electionId: createdElectionId,
-          organizationId: member.organizationId
-            ? Number(member.organizationId)
-            : undefined,
-        });
+        try {
+          await candidateService.assignCandidate(candidateId, createdElectionId);
+        } catch {
+          await candidateService.addCandidate({
+            name: candidate.name,
+            party: candidate.party,
+            voteCount: 0,
+            electionId: createdElectionId,
+            organizationId: currentUser?.organizationId ? Number(currentUser.organizationId) : undefined,
+          });
+        }
       }
 
       setElections((current) => [created, ...current]);
@@ -146,7 +165,8 @@ const AdminElections = () => {
       setStartDate("");
       setEndDate("");
       setActive(true);
-      setCandidateDrafts([{ memberId: null }]);
+      setCandidateDrafts([{ candidateId: null }]);
+      setSuccess("Election created and candidates successfully assigned!");
     } catch (err) {
       setError(
         err instanceof Error
@@ -160,6 +180,7 @@ const AdminElections = () => {
 
   const handleToggleActive = async (election: Election) => {
     setError("");
+    setSuccess("");
 
     try {
       const updated = await electionService.update(election.id, {
@@ -188,6 +209,7 @@ const AdminElections = () => {
     }
 
     setError("");
+    setSuccess("");
 
     try {
       await electionService.delete(id);
@@ -233,10 +255,17 @@ const AdminElections = () => {
           <div>
             <h1>Elections &amp; Voting Events</h1>
             <p className={styles.muted}>
-              Create active elections and assign existing organization members
-              as candidates in a single flow.
+              Create elections and assign organization members as candidates.
             </p>
           </div>
+          <button
+            type="button"
+            className={styles.refreshBtn}
+            onClick={() => void loadData()}
+            title="Refresh data"
+          >
+            <HiOutlineRefresh /> <span>Refresh</span>
+          </button>
         </div>
 
         <form className={styles.form} onSubmit={handleCreateElection}>
@@ -253,10 +282,11 @@ const AdminElections = () => {
 
             <label className={`${styles.field} ${styles.fullWidth}`}>
               <span>Description</span>
-              <input
+              <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief summary or scope of this election"
+                rows={2}
               />
             </label>
 
@@ -279,77 +309,64 @@ const AdminElections = () => {
             </label>
           </div>
 
-          <label className={styles.checkboxField}>
+          <label className={styles.toggleRow}>
             <input
               type="checkbox"
               checked={active}
               onChange={(e) => setActive(e.target.checked)}
             />
-            <span>Activate immediately upon creation</span>
+            <span className={styles.toggleLabel}>
+              Activate immediately upon creation
+            </span>
           </label>
 
-          {/* Member Selection Section */}
-          <div className={styles.candidateSection}>
-            <div className={styles.candidateHeader}>
-              <div className={styles.sectionTitle}>
-                <HiOutlineUserGroup className={styles.sectionIcon} />
-                <h3>Assign Candidates</h3>
+          {/* Candidate Selection Section */}
+          <div className={styles.candidateDraftSection}>
+            <div className={styles.candidateDraftHeader}>
+              <h3>Assign Candidates</h3>
+            </div>
+
+            {candidateDrafts.map((draft, index) => (
+              <div key={index} className={styles.candidateRow}>
+                <select
+                  className={styles.candidateSelect}
+                  value={draft.candidateId ?? ""}
+                  onChange={(e) =>
+                    handleCandidateChange(index, e.target.value)
+                  }
+                >
+                  <option value="">Select Candidate</option>
+                  {assignableCandidates.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.name} {candidate.party ? `(${candidate.party})` : ""}
+                    </option>
+                  ))}
+                </select>
+
+                {candidateDrafts.length > 1 && (
+                  <button
+                    type="button"
+                    className={styles.removeBtn}
+                    onClick={() => handleRemoveCandidateRow(index)}
+                    title="Remove candidate"
+                  >
+                    <HiOutlineTrash />
+                  </button>
+                )}
               </div>
-              <p className={styles.muted}>
-                Select registered organization members to participate in this
-                election.
-              </p>
-            </div>
-
-            <div className={styles.candidateList}>
-              {candidateDrafts.map((draft, index) => (
-                <div key={index} className={styles.candidateRow}>
-                  <div className={styles.selectWrapper}>
-                    <select
-                      value={draft.memberId ?? ""}
-                      onChange={(e) =>
-                        handleCandidateMemberChange(index, e.target.value)
-                      }
-                    >
-                      <option value="">-- Select Member --</option>
-                      {members.map((member) => {
-                        const fullName =
-                          [member.firstName, member.lastName]
-                            .filter(Boolean)
-                            .join(" ") || member.username;
-                        return (
-                          <option key={member.id} value={member.id}>
-                            {fullName} ({member.email})
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  {candidateDrafts.length > 1 && (
-                    <button
-                      type="button"
-                      className={styles.removeBtn}
-                      onClick={() => handleRemoveCandidateRow(index)}
-                      title="Remove candidate"
-                    >
-                      <HiOutlineTrash />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            ))}
 
             <button
               type="button"
-              className={styles.addCandidateBtn}
+              className={styles.addBtn}
               onClick={handleAddCandidateRow}
             >
               <HiOutlinePlus /> Add Another Candidate
             </button>
           </div>
 
-          {error ? <p className={styles.error}>{error}</p> : null}
+          {error ? <div className={styles.errorAlert}>{error}</div> : null}
+          {success ? <div className={styles.successAlert}>{success}</div> : null}
 
           <div className={styles.actions}>
             <Button
@@ -359,22 +376,17 @@ const AdminElections = () => {
               type="submit"
               disabled={saving}
             />
-            <button
-              type="button"
-              className={styles.secondaryBtn}
-              onClick={() => void loadData()}
-              title="Refresh data"
-            >
-              <HiOutlineRefresh /> Refresh
-            </button>
           </div>
         </form>
       </section>
 
-      {/* List Panel */}
+      {/* List / Table Panel */}
       <section className={styles.panel}>
         <div className={styles.panelHeader}>
-          <h2>Managed Elections</h2>
+          <div>
+            <h2>Managed Elections</h2>
+            <p className={styles.muted}>Overview of active and historical voting schedules.</p>
+          </div>
           <span className={styles.countBadge}>{elections.length} Total</span>
         </div>
 
@@ -382,96 +394,99 @@ const AdminElections = () => {
           <div className={styles.emptyState}>Loading elections...</div>
         ) : elections.length === 0 ? (
           <div className={styles.emptyState}>
-            No elections created yet. Use the form above to establish your first
-            election.
+            No elections created yet. Use the form above to establish your first election.
           </div>
         ) : (
-          <div className={styles.list}>
-            {elections.map((election) => (
-              <div key={election.id} className={styles.card}>
-                <div className={styles.cardMain}>
-                  <div className={styles.cardHeader}>
-                    <strong className={styles.cardTitle}>
-                      {election.title}
-                    </strong>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        election.active
-                          ? styles.statusActive
-                          : styles.statusInactive
-                      }`}
-                    >
-                      {election.active ? (
-                        <HiOutlineCheckCircle />
+          <div className={styles.tableResponsive}>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th>Schedule</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {elections.map((election) => (
+                  <tr key={election.id}>
+                    <td className={styles.titleCell}>
+                      <strong>{election.title}</strong>
+                    </td>
+                    <td className={styles.descCell}>
+                      {election.description ?? "No description provided."}
+                    </td>
+                    <td>
+                      {(election.startDate || election.endDate) ? (
+                        <span className={styles.scheduleBadge}>
+                          <HiOutlineCalendar size={14} />
+                          {election.startDate
+                            ? new Date(election.startDate).toLocaleDateString()
+                            : "Immediate"}{" "}
+                          &mdash;{" "}
+                          {election.endDate
+                            ? new Date(election.endDate).toLocaleDateString()
+                            : "No end"}
+                        </span>
                       ) : (
-                        <HiOutlineXCircle />
+                        <span className={styles.mutedText}>Not scheduled</span>
                       )}
-                      {election.active ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-
-                  <p className={styles.cardDesc}>
-                    {election.description ?? "No description provided."}
-                  </p>
-
-                  {(election.startDate || election.endDate) && (
-                    <div className={styles.cardMeta}>
-                      <HiOutlineCalendar />
-                      <span>
-                        {election.startDate
-                          ? new Date(election.startDate).toLocaleDateString()
-                          : "Immediate"}{" "}
-                        &mdash;{" "}
-                        {election.endDate
-                          ? new Date(election.endDate).toLocaleDateString()
-                          : "No end date"}
+                    </td>
+                    <td>
+                      <span
+                        className={`${styles.statusPill} ${
+                          election.active ? styles.pillActive : styles.pillEnded
+                        }`}
+                      >
+                        <span className={styles.pillDot} />
+                        {election.active ? "Active" : "Inactive"}
                       </span>
-                    </div>
-                  )}
-                </div>
+                    </td>
+                    <td>
+                      <div className={styles.tableActions}>
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          onClick={() => void handleToggleActive(election)}
+                        >
+                          {election.active ? "Deactivate" : "Activate"}
+                        </button>
 
-                <div className={styles.cardActions}>
-                  <button
-                    type="button"
-                    className={
-                      election.active
-                        ? styles.btnDeactivate
-                        : styles.btnActivate
-                    }
-                    onClick={() => void handleToggleActive(election)}
-                  >
-                    {election.active ? "Deactivate" : "Activate"}
-                  </button>
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          onClick={() => void handleExportPdf(election.id)}
+                          disabled={exportingId === election.id}
+                          title="Export PDF Report"
+                        >
+                          <HiOutlineDocumentDownload /> PDF
+                        </button>
 
-                  <button
-                    type="button"
-                    className={styles.btnExport}
-                    onClick={() => void handleExportPdf(election.id)}
-                    disabled={exportingId === election.id}
-                  >
-                    <HiOutlineDocumentDownload /> PDF
-                  </button>
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          onClick={() => void handleExportExcel(election.id)}
+                          disabled={exportingId === election.id}
+                          title="Export Excel Report"
+                        >
+                          <HiOutlineDocumentDownload /> Excel
+                        </button>
 
-                  <button
-                    type="button"
-                    className={styles.btnExport}
-                    onClick={() => void handleExportExcel(election.id)}
-                    disabled={exportingId === election.id}
-                  >
-                    <HiOutlineDocumentDownload /> Excel
-                  </button>
-
-                  <button
-                    type="button"
-                    className={styles.btnDelete}
-                    onClick={() => void handleDelete(election.id)}
-                    title="Delete election"
-                  >
-                    <HiOutlineTrash />
-                  </button>
-                </div>
-              </div>
-            ))}
+                        <button
+                          type="button"
+                          className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+                          onClick={() => void handleDelete(election.id)}
+                          title="Delete election"
+                        >
+                          <HiOutlineTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

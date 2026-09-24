@@ -26,8 +26,16 @@ public class ElectionService {
         this.organizationRepository = organizationRepository;
     }
 
+    public List<Election> getAllElections() {
+        return electionRepository.findAll();
+    }
+
     public List<Election> getElectionsByOrg(Long organizationId) {
         return electionRepository.findByOrganizationId(organizationId);
+    }
+
+    public List<Election> getAllActiveElections() {
+        return electionRepository.findAll().stream().filter(Election::isActive).toList();
     }
 
     public List<Election> getActiveElectionsByOrg(Long organizationId) {

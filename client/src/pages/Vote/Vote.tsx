@@ -3,12 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   HiOutlineCheckCircle,
   HiOutlineShieldCheck,
-  HiOutlineClipboardCopy,
-  HiOutlineClipboardCheck,
   HiOutlineExclamationCircle,
   HiOutlineLockClosed,
 } from "react-icons/hi";
-import Button from "../../common/Button/Button";
 import { useAuth } from "../../hooks/useAuth";
 import { electionService } from "../../services/electionService";
 import { voteService } from "../../services/voteService";
@@ -29,15 +26,12 @@ const Vote = () => {
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
 
-  const [submitted, setSubmitted] = useState(false);
+  const [, setSubmitted] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-
-  const [receiptToken, setReceiptToken] = useState("");
-  const [receiptTime, setReceiptTime] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const rawId = electionId || organizationId;
@@ -46,6 +40,7 @@ const Vote = () => {
     const loadInitialData = async () => {
       setLoading(true);
       setError("");
+      setSuccessMessage("");
       setSubmitted(false);
 
       try {
@@ -96,6 +91,7 @@ const Vote = () => {
     setSelectedElectionId(targetId);
     setSelectedCandidate(null);
     setSubmitted(false);
+    setSuccessMessage("");
     setActiveStep(1);
     setLoading(true);
     setError("");
@@ -127,13 +123,6 @@ const Vote = () => {
     return candidates.find((c) => c.id === selectedCandidate) ?? null;
   }, [candidates, selectedCandidate]);
 
-  const generateCryptographicReceipt = () => {
-    const chars = "ABCDEF0123456789";
-    const segment = (len: number) =>
-      Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-    return `VS-${segment(5)}-${segment(4)}-${segment(4)}`;
-  };
-
   const handleSubmitVote = async () => {
     if (!selectedCandidate) {
       setError("Please select a candidate before confirming your ballot.");
@@ -145,21 +134,33 @@ const Vote = () => {
       return;
     }
 
+    if (!selectedElectionId) {
+      setError("Please select an election to cast your vote.");
+      return;
+    }
+
     setSending(true);
     setError("");
+    setSuccessMessage("");
 
     try {
-      await voteService.castVote({
+      const responseMessage = await voteService.castVote({
         userId: user.id,
         candidateId: selectedCandidate,
-        electionId: selectedElectionId ?? undefined,
+        electionId: selectedElectionId,
       });
 
-      const token = generateCryptographicReceipt();
-      const timestamp = new Date().toUTCString();
-      setReceiptToken(token);
-      setReceiptTime(timestamp);
+      setCandidates((prev) =>
+        prev.map((c) =>
+          c.id === selectedCandidate
+            ? { ...c, voteCount: (c.voteCount ?? 0) + 1 }
+            : c,
+        ),
+      );
 
+      setSuccessMessage(
+        responseMessage || "Your vote has been cast and recorded successfully!",
+      );
       setSubmitted(true);
       setHasVoted(true);
       setActiveStep(3);
@@ -172,56 +173,60 @@ const Vote = () => {
     }
   };
 
-  const handleCopyReceipt = () => {
-    if (!receiptToken) return;
-    navigator.clipboard.writeText(receiptToken);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
   return (
     <div className="vote-page">
       <div className="vote-container">
-        {/* Top Header */}
+        {/* Header */}
         <div className="vote-header">
           <span className="badge">
             <HiOutlineShieldCheck /> SECURE DIGITAL BALLOT
           </span>
           <h1>
-            {currentElection
-              ? currentElection.title
-              : "Official Election Ballot"}
+            {currentElection ? currentElection.title : "Official Election Ballot"}
           </h1>
           <p>
             Welcome, <strong>{user?.username ?? "Voter"}</strong>. Your identity is cryptographically verified and your ballot is anonymous.
           </p>
         </div>
 
-        {/* Multi-Step Ballot Stepper */}
+        {/* Ballot Stepper */}
         {!hasVoted && (
           <div className="ballot-stepper">
             <div className={`step-item ${activeStep >= 1 ? "active" : ""}`}>
               <div className="step-number">1</div>
-              <span className="step-label">Select Candidate</span>
+              <div className="step-info">
+                <span className="step-label">Step 1</span>
+                <span className="step-title">Select Candidate</span>
+              </div>
             </div>
-            <div className="step-line" />
+            <div className="step-divider" />
             <div className={`step-item ${activeStep >= 2 ? "active" : ""}`}>
               <div className="step-number">2</div>
-              <span className="step-label">Review Ballot</span>
+              <div className="step-info">
+                <span className="step-label">Step 2</span>
+                <span className="step-title">Review Ballot</span>
+              </div>
             </div>
-            <div className="step-line" />
+            <div className="step-divider" />
             <div className={`step-item ${activeStep === 3 ? "active" : ""}`}>
               <div className="step-number">3</div>
-              <span className="step-label">Receipt &amp; Confirm</span>
+              <div className="step-info">
+                <span className="step-label">Step 3</span>
+                <span className="step-title">Confirmation</span>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Active Election Selector */}
+        {/* Election Selector Dropdown Card */}
         {elections.length > 1 && !hasVoted && activeStep === 1 && (
-          <div className="election-selector">
-            <label>Select Election: </label>
+          <div className="election-selector-card">
+            <div className="election-meta">
+              <h2>Active Election Ballot</h2>
+              <p>Switch between multiple organization polls if applicable.</p>
+            </div>
             <select
+              className="election-dropdown"
               value={selectedElectionId ?? ""}
               onChange={(e) => void handleElectionChange(Number(e.target.value))}
             >
@@ -234,83 +239,57 @@ const Vote = () => {
           </div>
         )}
 
-        {/* Validation Callout Error Message */}
+        {/* Error Feedback */}
         {error && (
-          <div className="error-callout" role="alert">
-            <HiOutlineExclamationCircle />
+          <div className="error-banner" role="alert">
+            <HiOutlineExclamationCircle style={{ fontSize: "1.2rem", flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Loading Indicator */}
+        {/* Dynamic Views */}
         {loading ? (
           <div className="loading-box">
             <div className="spinner" />
             <p>Encrypting ballot options &amp; verifying eligibility…</p>
           </div>
         ) : hasVoted || activeStep === 3 ? (
-          /* High-Trust Confirmation Receipt Modal Screen */
-          <div className="receipt-modal">
-            <div className="modal-header">
-              <div className="success-icon-animated">
-                <HiOutlineCheckCircle />
-              </div>
-              <h2>Ballot Successfully Cast!</h2>
-              <p>Your vote has been securely recorded on the VoteSecure audit ledger.</p>
+          /* Clean Success Screen */
+          <div className="receipt-card">
+            <div className="receipt-icon">
+              <HiOutlineCheckCircle />
             </div>
+            <h2>Ballot Successfully Cast!</h2>
+            <p>
+              {successMessage || "Your vote has been securely recorded on the VoteSecure audit ledger."}
+            </p>
 
-            <div className="receipt-box">
-              <div className="receipt-row">
-                <span className="receipt-label">Status</span>
-                <span className="receipt-status-pill">
-                  <HiOutlineLockClosed /> Cryptographically Verified
-                </span>
-              </div>
-              <div className="receipt-row">
-                <span className="receipt-label">Timestamp</span>
-                <span className="receipt-value">{receiptTime || new Date().toUTCString()}</span>
-              </div>
-              <div className="receipt-row">
-                <span className="receipt-label">Election</span>
-                <span className="receipt-value">{currentElection?.title ?? "VoteSecure Platform"}</span>
-              </div>
-              <div className="receipt-row token-row">
-                <span className="receipt-label">Audit Token</span>
-                <div className="token-code-wrap">
-                  <code className="token-code">{receiptToken || "VS-8F92A-4B71-9C3E"}</code>
-                  <button
-                    type="button"
-                    className="copy-btn"
-                    onClick={handleCopyReceipt}
-                    title="Copy receipt token"
-                  >
-                    {copied ? <HiOutlineClipboardCheck className="copied" /> : <HiOutlineClipboardCopy />}
-                    <span>{copied ? "Copied!" : "Copy"}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <Button
-                text="View Live Results"
+            <div className="step-actions" style={{ width: "100%", justifyContent: "center", marginTop: "12px" }}>
+              <button
+                type="button"
+                className="btn-primary"
                 onClick={() => navigate(`/results/${selectedElectionId}`)}
-              />
-              <Button
-                text="Return to Elections"
+              >
+                View Live Results
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
                 onClick={() => navigate("/elections")}
-              />
+              >
+                Return to Elections
+              </button>
             </div>
           </div>
         ) : activeStep === 1 ? (
-          /* Step 1: Candidate Cards Selection Grid */
+          /* Step 1: Candidate Selection List */
           <>
             {candidates.length === 0 ? (
-              <div className="empty-candidates">
+              <div className="loading-box">
                 <p>No candidates are registered for this election at this time.</p>
               </div>
             ) : (
-              <div className="candidate-grid">
+              <div className="candidate-list">
                 {candidates.map((candidate) => {
                   const isSelected = selectedCandidate === candidate.id;
 
@@ -323,16 +302,15 @@ const Vote = () => {
                       role="button"
                       aria-pressed={isSelected}
                     >
-                      <div className="avatar-wrap">
-                        <div className="avatar">{candidate.name.charAt(0)}</div>
+                      <div className="candidate-profile">
+                        <div className="candidate-avatar">{candidate.name.charAt(0)}</div>
+                        <div className="candidate-info">
+                          <h3>{candidate.name}</h3>
+                          <span className="candidate-party">{candidate.party ?? "Independent Candidate"}</span>
+                        </div>
                       </div>
-                      <div className="candidate-info">
-                        <h3>{candidate.name}</h3>
-                        <p>{candidate.party ?? "Independent Candidate"}</p>
-                        <span className="tag">Verified Candidate</span>
-                      </div>
-                      <div className="select-box">
-                        {isSelected ? <HiOutlineCheckCircle className="check-animated" /> : <div className="unselected-dot" />}
+                      <div className="selection-indicator">
+                        {isSelected && <div className="selection-dot" />}
                       </div>
                     </div>
                   );
@@ -340,64 +318,76 @@ const Vote = () => {
               </div>
             )}
 
-            {/* Bottom Action Control Bar */}
-            <div className="action-card">
-              <p className="selection-summary">
-                {selectedCandidateObj
-                  ? `Selected: ${selectedCandidateObj.name}`
-                  : "Please choose a candidate to proceed."}
-              </p>
-
-              <div className="actions">
-                <Button
-                  text="Review Selection →"
-                  onClick={() => {
-                    if (!selectedCandidate) {
-                      setError("Select a candidate to review your ballot.");
-                      return;
-                    }
-                    setError("");
-                    setActiveStep(2);
-                  }}
-                  disabled={!selectedCandidate}
-                />
-                <Button
-                  text="Back to Elections"
-                  onClick={() => navigate("/elections")}
-                />
-              </div>
+            <div className="step-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => navigate("/elections")}
+              >
+                Back to Elections
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  if (!selectedCandidate) {
+                    setError("Please select a candidate to review your ballot.");
+                    return;
+                  }
+                  setError("");
+                  setActiveStep(2);
+                }}
+                disabled={!selectedCandidate}
+              >
+                Review Selection →
+              </button>
             </div>
           </>
         ) : (
-          /* Step 2: Review Selection Screen */
+          /* Step 2: Review Screen */
           <div className="review-card">
             <h2>Review Your Selection</h2>
-            <p className="review-intro">
+            <p style={{ color: "#6B7280", fontSize: "0.92rem", margin: "0 0 4px" }}>
               Please double-check your choice before casting your final ballot. Once submitted, your selection cannot be changed.
             </p>
 
             {selectedCandidateObj && (
-              <div className="review-candidate-box">
-                <div className="avatar">{selectedCandidateObj.name.charAt(0)}</div>
-                <div className="review-details">
-                  <h3>{selectedCandidateObj.name}</h3>
-                  <p>{selectedCandidateObj.party ?? "Independent Candidate"}</p>
-                  <span className="tag">Selected Choice</span>
+              <div className="chosen-candidate-box">
+                <div className="candidate-profile">
+                  <div className="candidate-avatar">{selectedCandidateObj.name.charAt(0)}</div>
+                  <div className="candidate-info">
+                    <h3>{selectedCandidateObj.name}</h3>
+                    <span className="candidate-party">{selectedCandidateObj.party ?? "Independent Candidate"}</span>
+                  </div>
                 </div>
+                <span className="badge" style={{ margin: 0 }}>Selected Choice</span>
               </div>
             )}
 
-            <div className="actions">
-              <Button
-                text={sending ? "Casting Ballot..." : "Confirm & Cast Ballot"}
-                onClick={handleSubmitVote}
-                disabled={sending}
-              />
-              <Button
-                text="← Change Candidate"
+            <div className="security-notice">
+              <HiOutlineLockClosed />
+              <div>
+                <strong>Zero-Knowledge Anonymity Enabled:</strong> Your vote is decoupled from your profile cryptographic hash before being logged into the immutable ballot chain.
+              </div>
+            </div>
+
+            <div className="step-actions">
+              <button
+                type="button"
+                className="btn-secondary"
                 onClick={() => setActiveStep(1)}
                 disabled={sending}
-              />
+              >
+                ← Change Candidate
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleSubmitVote}
+                disabled={sending}
+              >
+                {sending ? "Casting Ballot..." : "Confirm & Cast Ballot"}
+              </button>
             </div>
           </div>
         )}

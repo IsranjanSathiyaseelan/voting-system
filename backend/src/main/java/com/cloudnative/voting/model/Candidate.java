@@ -71,7 +71,13 @@ public class Candidate {
         if (this.organizationId != null) {
             return this.organizationId;
         }
-        return this.organization != null ? this.organization.getId() : null;
+        if (this.organization != null) {
+            return this.organization.getId();
+        }
+        if (this.election != null && this.election.getOrganization() != null) {
+            return this.election.getOrganization().getId();
+        }
+        return null;
     }
 
     public void setOrganizationId(Long organizationId) {

@@ -8,71 +8,63 @@ import {
   Tooltip,
 } from "recharts";
 import {
-  HiOutlineDocumentReport,
-  HiOutlineTable,
   HiOutlineArrowLeft,
   HiOutlineBadgeCheck,
-  HiOutlineChartBar,
   HiOutlineUsers,
-  HiOutlineCheckCircle,
 } from "react-icons/hi";
-import { organizationService } from "../../services/organizationService";
+import { electionService } from "../../services/electionService";
 import { candidateService } from "../../services/candidateService";
-import { reportService } from "../../services/reportService";
 import type { Candidate } from "../../types/candidate";
-import type { Organization } from "../../types/organization";
 import type { Election } from "../../types/election";
 
 import "./Results.css";
 
-const CHART_COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6"];
+const CHART_COLORS = ["#5651D8", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6"];
 
 const Results = () => {
   const [results, setResults] = useState<Candidate[]>([]);
-  const [organization, setOrganization] = useState<Organization | null>(null);
   const [elections, setElections] = useState<Election[]>([]);
+  const [currentElection, setCurrentElection] = useState<Election | null>(null);
   const [selectedElectionId, setSelectedElectionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [exportingPdf, setExportingPdf] = useState(false);
-  const [exportingExcel, setExportingExcel] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { organizationId } = useParams();
+  // Route is /results/:electionId — must match the route param name
+  const { electionId: electionIdParam } = useParams<{ electionId?: string }>();
 
   useEffect(() => {
     const loadInitialResults = async () => {
       setLoading(true);
       setError("");
 
-      const parsedOrganizationId = Number(organizationId);
-
-      if (!organizationId || Number.isNaN(parsedOrganizationId)) {
-        setError("Invalid organization selected.");
-        setLoading(false);
-        return;
-      }
-
       try {
-        const [orgData, orgElections] = await Promise.all([
-          organizationService.getById(parsedOrganizationId),
-          organizationService.getElections(parsedOrganizationId).catch(() => [] as Election[]),
-        ]);
+        // Fetch all elections scoped to the logged-in user's org (backend enforces tenant)
+        const allElections = await electionService.getAll().catch(() => [] as Election[]);
+        setElections(allElections);
 
-        setOrganization(orgData);
-        setElections(orgElections);
+        // Determine which election to show: prefer URL param, then first active, then first overall
+        const parsedId = Number(electionIdParam);
+        let targetId: number | null = null;
 
-        const activeElections = orgElections.filter((e) => e.active);
-        const initialElectionId = activeElections.length > 0 ? activeElections[0].id : (orgElections[0]?.id ?? null);
-        setSelectedElectionId(initialElectionId);
-
-        let data: Candidate[] = [];
-        if (initialElectionId) {
-          data = await candidateService.getResultsByElection(initialElectionId).catch(() => []);
-        } else {
-          data = await organizationService.getResults(parsedOrganizationId).catch(() => []);
+        if (electionIdParam && !Number.isNaN(parsedId) && parsedId > 0) {
+          targetId = parsedId;
+        } else if (allElections.length > 0) {
+          const active = allElections.filter((e) => e.active);
+          targetId = active.length > 0 ? active[0].id : allElections[0].id;
         }
 
-        setResults(data);
+        setSelectedElectionId(targetId);
+
+        if (targetId) {
+          const [electionObj, data] = await Promise.all([
+            electionService.getById(targetId).catch(() => null),
+            candidateService.getResultsByElection(targetId).catch(() => [] as Candidate[]),
+          ]);
+          setCurrentElection(electionObj);
+          setResults(data);
+        } else {
+          setResults([]);
+        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Unable to load election results.",
@@ -83,15 +75,19 @@ const Results = () => {
     };
 
     void loadInitialResults();
-  }, [organizationId]);
+  }, [electionIdParam]);
 
-  const handleElectionSelect = async (electionId: number) => {
-    setSelectedElectionId(electionId);
+  const handleElectionSelect = async (id: number) => {
+    setSelectedElectionId(id);
     setLoading(true);
     setError("");
 
     try {
-      const data = await candidateService.getResultsByElection(electionId);
+      const [electionObj, data] = await Promise.all([
+        electionService.getById(id).catch(() => null),
+        candidateService.getResultsByElection(id).catch(() => [] as Candidate[]),
+      ]);
+      setCurrentElection(electionObj);
       setResults(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load results for this election.");
@@ -100,40 +96,16 @@ const Results = () => {
     }
   };
 
-  const handleExportPdf = async () => {
-    if (!selectedElectionId) return;
-    setExportingPdf(true);
-    try {
-      await reportService.exportPdf(selectedElectionId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to export PDF report.");
-    } finally {
-      setExportingPdf(false);
-    }
-  };
-
-  const handleExportExcel = async () => {
-    if (!selectedElectionId) return;
-    setExportingExcel(true);
-    try {
-      await reportService.exportExcel(selectedElectionId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to export Excel report.");
-    } finally {
-      setExportingExcel(false);
-    }
-  };
-
   const totalVotes = useMemo(
-    () => results.reduce((sum, item) => sum + item.voteCount, 0),
+    () => results.reduce((sum, item) => sum + (item.voteCount ?? 0), 0),
     [results],
   );
 
   const sortedCandidates = useMemo(() => {
-    return [...results].sort((a, b) => b.voteCount - a.voteCount);
+    return [...results].sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0));
   }, [results]);
 
-  const leader = sortedCandidates[0] && sortedCandidates[0].voteCount > 0 ? sortedCandidates[0] : null;
+  const leader = sortedCandidates[0] && (sortedCandidates[0].voteCount ?? 0) > 0 ? sortedCandidates[0] : null;
 
   return (
     <div className="results-page">
@@ -153,7 +125,7 @@ const Results = () => {
           <div className="hero-details">
             <span className="badge">Verified Analytics</span>
             <h1>
-              {organization ? `${organization.name} Results` : "Election Dashboard"}
+              {currentElection ? `${currentElection.title} — Results` : "Election Results"}
             </h1>
             <p>Real-time encrypted ballot tallying and distribution analytics.</p>
           </div>
@@ -161,7 +133,7 @@ const Results = () => {
           {/* Election Dropdown Selector */}
           {elections.length > 0 && (
             <div className="election-selector-box">
-              <label htmlFor="election-select">Active Election</label>
+              <label htmlFor="election-select">Select Election</label>
               <select
                 id="election-select"
                 value={selectedElectionId ?? ""}
@@ -170,7 +142,7 @@ const Results = () => {
               >
                 {elections.map((election) => (
                   <option key={election.id} value={election.id}>
-                    {election.title}
+                    {election.title} {election.active ? "(Active)" : "(Ended)"}
                   </option>
                 ))}
               </select>
@@ -200,32 +172,12 @@ const Results = () => {
             {/* Top Stat Summary Cards */}
             <div className="stats-row">
               <div className="stat-card">
-                <div className="stat-icon-wrapper blue">
-                  <HiOutlineChartBar />
-                </div>
-                <div className="stat-info">
-                  <span className="stat-label">Total Ballots</span>
-                  <h2 className="stat-value">{totalVotes.toLocaleString()}</h2>
-                </div>
-              </div>
-
-              <div className="stat-card">
                 <div className="stat-icon-wrapper indigo">
                   <HiOutlineUsers />
                 </div>
                 <div className="stat-info">
                   <span className="stat-label">Candidates</span>
                   <h2 className="stat-value">{results.length}</h2>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon-wrapper emerald">
-                  <HiOutlineCheckCircle />
-                </div>
-                <div className="stat-info">
-                  <span className="stat-label">Tally Status</span>
-                  <h2 className="stat-value status-live">Live Sync</h2>
                 </div>
               </div>
             </div>
@@ -241,7 +193,7 @@ const Results = () => {
 
                 <div className="candidate-list">
                   {sortedCandidates.map((candidate, idx) => {
-                    const percentage = totalVotes > 0 ? ((candidate.voteCount / totalVotes) * 100).toFixed(1) : "0.0";
+                    const percentage = totalVotes > 0 ? (((candidate.voteCount ?? 0) / totalVotes) * 100).toFixed(1) : "0.0";
                     const isLeader = leader?.id === candidate.id;
                     const color = CHART_COLORS[idx % CHART_COLORS.length];
 
@@ -258,7 +210,7 @@ const Results = () => {
                             )}
                           </div>
                           <div className="candidate-metrics">
-                            <span className="vote-count">{candidate.voteCount} votes</span>
+                            <span className="vote-count">{candidate.voteCount ?? 0} votes</span>
                             <span className="percentage-text">{percentage}%</span>
                           </div>
                         </div>
@@ -323,33 +275,8 @@ const Results = () => {
               </div>
             </div>
 
-            {/* Action & Export Controls */}
-            <div className="export-toolbar">
-              <div className="export-group">
-                {selectedElectionId && (
-                  <>
-                    <button
-                      type="button"
-                      className="btn-export pdf"
-                      onClick={() => void handleExportPdf()}
-                      disabled={exportingPdf}
-                    >
-                      <HiOutlineDocumentReport />
-                      {exportingPdf ? "Generating PDF..." : "Export PDF Report"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-export excel"
-                      onClick={() => void handleExportExcel()}
-                      disabled={exportingExcel}
-                    >
-                      <HiOutlineTable />
-                      {exportingExcel ? "Generating Excel..." : "Export Excel Sheet"}
-                    </button>
-                  </>
-                )}
-              </div>
-
+            {/* Bottom Actions */}
+            <div className="export-toolbar" style={{ justifyContent: "flex-end" }}>
               <button
                 type="button"
                 className="btn-secondary"

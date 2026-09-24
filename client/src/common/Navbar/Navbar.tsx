@@ -1,8 +1,9 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   HiOutlineLogout,
-  HiOutlineShieldCheck,
   HiOutlineLockClosed,
+  HiOutlineShieldCheck,
+  HiArrowRight,
 } from "react-icons/hi";
 import { FaVoteYea } from "react-icons/fa";
 import styles from "./Navbar.module.css";
@@ -35,8 +36,8 @@ const Navbar = () => {
             isAdmin
               ? "/admin/dashboard"
               : user
-                ? "/elections"
-                : "/"
+              ? "/elections"
+              : "/"
           }
           className={styles.logo}
         >
@@ -48,16 +49,15 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Navigation Area */}
-        <nav className={styles.navWrapper}>
+        {/* Floating Pill Navigation Area */}
+        <nav className={styles.pillNavContainer}>
           {user ? (
             <>
-              {/* Primary Navigation Links */}
-              <div className={styles.navLinks}>
+              <div className={styles.pillMenu}>
                 <NavLink
                   to="/elections"
                   className={({ isActive }) =>
-                    `${styles.navItem} ${isActive ? styles.active : ""}`
+                    `${styles.pillItem} ${isActive ? styles.pillActive : ""}`
                   }
                 >
                   <FaVoteYea className={styles.linkIcon} />
@@ -68,7 +68,7 @@ const Navbar = () => {
                   <NavLink
                     to="/admin/dashboard"
                     className={({ isActive }) =>
-                      `${styles.navItem} ${isActive ? styles.active : ""}`
+                      `${styles.pillItem} ${isActive ? styles.pillActive : ""}`
                     }
                   >
                     <HiOutlineShieldCheck className={styles.linkIcon} />
@@ -77,32 +77,54 @@ const Navbar = () => {
                 )}
               </div>
 
-              {/* User Profile & Actions */}
+              {/* User Controls & Action */}
               <div className={styles.userControls}>
                 <div className={styles.profileChip}>
                   <div className={styles.avatar}>
                     {user.username ? user.username.charAt(0).toUpperCase() : "U"}
                   </div>
-                  <div className={styles.profileDetails}>
-                    <span className={styles.userName}>{user.username}</span>
-                    {isAdmin && <span className={styles.roleBadge}>Admin</span>}
-                  </div>
+                  <span className={styles.userName}>{user.username}</span>
                 </div>
 
                 <button
                   onClick={handleLogout}
-                  className={styles.logoutBtn}
+                  className={styles.darkActionBtn}
                   title="Sign out of your account"
                 >
-                  <HiOutlineLogout className={styles.logoutIcon} />
-                  <span className={styles.logoutText}>Logout</span>
+                  <span>Logout</span>
+                  <div className={styles.actionIconCircle}>
+                    <HiOutlineLogout />
+                  </div>
                 </button>
               </div>
             </>
           ) : (
-            <Link to="/" className={styles.loginBtn}>
-              Login
-            </Link>
+            <>
+              <div className={styles.pillMenu}>
+                <Link to="/" className={`${styles.pillItem} ${styles.pillActive}`}>
+                  Home
+                </Link>
+                <Link to="/elections" className={styles.pillItem}>
+                  Elections
+                </Link>
+                <Link to="#features" className={styles.pillItem}>
+                  Features
+                </Link>
+                <Link to="#pricing" className={styles.pillItem}>
+                  Pricing
+                </Link>
+                <Link to="#about" className={styles.pillItem}>
+                  About
+                </Link>
+              </div>
+
+              <Link to="/" className={styles.darkActionBtn}>
+                <span>Get started</span>
+                <div className={styles.actionIconCircle}>
+                  <HiArrowRight />
+                </div>
+              </Link>
+            </>
           )}
         </nav>
       </div>

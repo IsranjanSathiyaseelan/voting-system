@@ -18,6 +18,7 @@ import Results from "../pages/Results/Results";
 
 import AdminDashboard from "../pages/Admin/AdminDashboard";
 import AdminElections from "../pages/Admin/AdminElections";
+import AdminCandidates from "../pages/Admin/AdminCandidates";
 
 const AppRoutes = () => {
   return (
@@ -54,10 +55,7 @@ const AppRoutes = () => {
             path="/admin/organizations"
             element={<Navigate to="/admin/dashboard" replace />}
           />
-          <Route
-            path="/admin/candidates"
-            element={<Navigate to="/admin/dashboard" replace />}
-          />
+          <Route path="/admin/candidates" element={<AdminCandidates />} />
         </Route>
       </Route>
 

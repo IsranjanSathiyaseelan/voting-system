@@ -7,15 +7,13 @@
   top: 0;
   z-index: 1000;
   width: 100%;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 12px 24px;
   display: flex;
@@ -27,7 +25,7 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-decoration: none;
   transition: opacity 0.2s ease;
 }
@@ -37,199 +35,149 @@
 }
 
 .logoBadge {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+  background: #111827;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
-  font-size: 1.2rem;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  color: #FFFFFF;
+  font-size: 1.15rem;
 }
 
 .logoText {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #ffffff;
+  color: #111827;
   letter-spacing: -0.02em;
+  font-family: 'Poppins', 'Inter', sans-serif;
 }
 
 .logoHighlight {
-  background: linear-gradient(135deg, #818cf8 0%, #60a5fa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #5651D8;
 }
 
-/* NAV WRAPPER & LINKS */
-.navWrapper {
+/* FLOATING PILL NAVIGATION CONTAINER */
+.pillNavContainer {
   display: flex;
   align-items: center;
   gap: 24px;
 }
 
-.navLinks {
+.pillMenu {
   display: flex;
   align-items: center;
-  gap: 6px;
+  padding: 4px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 9999px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.navItem {
+.pillItem {
   display: flex;
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  color: #94a3b8;
+  color: #6B7280;
   font-size: 0.875rem;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
 }
 
 .linkIcon {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
-.navItem:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.08);
+.pillItem:hover {
+  color: #111827;
 }
 
-/* ACTIVE LINK STATE */
-.active {
-  background: rgba(99, 102, 241, 0.15) !important;
-  color: #a5b4fc !important;
-  border-color: rgba(99, 102, 241, 0.3) !important;
-  font-weight: 700 !important;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+.pillActive {
+  color: #111827 !important;
+  background: #FFFFFF !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid #E5E7EB;
 }
 
-/* USER CONTROLS SECTION */
+/* USER CONTROLS & DARK ACTION BUTTON */
 .userControls {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-left: 20px;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 12px;
 }
 
 .profileChip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 9999px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
 }
 
 .avatar {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: #ffffff;
-  font-size: 0.875rem;
-  font-weight: 700;
+  background: #5651D8;
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-}
-
-.profileDetails {
-  display: flex;
-  flex-direction: column;
+  font-weight: 700;
+  font-size: 0.75rem;
 }
 
 .userName {
-  color: #f8fafc;
-  font-weight: 600;
-  font-size: 0.875rem;
-  line-height: 1.2;
-}
-
-.roleBadge {
-  font-size: 0.675rem;
-  font-weight: 700;
-  color: #818cf8;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* BUTTONS */
-.loginBtn {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: #ffffff !important;
-  padding: 8px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
-}
-
-.loginBtn:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-}
-
-.logoutBtn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: 10px;
-  color: #fca5a5;
-  cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
-  transition: all 0.2s ease;
+  color: #111827;
 }
 
-.logoutBtn:hover {
-  background: rgba(239, 68, 68, 0.22);
-  color: #ffffff;
-  border-color: rgba(239, 68, 68, 0.4);
+.darkActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 6px 6px 18px;
+  border-radius: 9999px;
+  background: #111827;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.logoutIcon {
-  font-size: 1.1rem;
+.darkActionBtn:hover {
+  background: #1F2937;
 }
 
-/* RESPONSIVE DESIGN */
+.actionIconCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 0.95rem;
+}
+
 @media (max-width: 768px) {
+  .pillMenu {
+    display: none;
+  }
   .container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-    padding: 14px 16px;
-  }
-
-  .navWrapper {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  .navLinks {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .navItem {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .userControls {
-    padding-left: 0;
-    border-left: none;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    justify-content: space-between;
+    padding: 10px 16px;
   }
 }

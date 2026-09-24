@@ -4,9 +4,49 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <title>VoteSecure - Multi-Tenant Election & Polling Platform</title>
+    <!-- Google Fonts: Inter and Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#5651D8',
+                hover: '#4843c2',
+                50: '#f5f4fd',
+                100: '#ecebfa',
+                200: '#dbd8f7',
+                300: '#bfbaf1',
+                400: '#9e95e8',
+                500: '#5651D8',
+                600: '#4843c2',
+                700: '#3d37a8',
+                800: '#332e8c',
+                900: '#2b2773',
+              },
+              brand: {
+                DEFAULT: '#5651D8',
+                hover: '#4843c2',
+                light: '#EEF0FD',
+              },
+              border: '#E0E0E0',
+              surface: '#F9FAFB',
+            },
+            fontFamily: {
+              sans: ['Inter', 'Poppins', 'system-ui', '-apple-system', 'sans-serif'],
+              heading: ['Poppins', 'Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
   </head>
-  <body>
+  <body class="bg-[#F9FAFB] text-gray-900 font-sans antialiased min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

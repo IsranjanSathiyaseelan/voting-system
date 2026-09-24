@@ -42,59 +42,86 @@ public class VoteService {
     }
 
     public String castVote(String username, VoteRequest request) {
+        if (request == null || request.getCandidateId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Candidate ID is required to cast a vote");
+        }
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+        if (user.getOrganization() == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not belong to any organization");
+        }
+        Long userOrgId = user.getOrganization().getId();
+
         Candidate candidate = candidateRepository.findById(request.getCandidateId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Candidate not found"));
-
-        Long organizationId = candidate.getOrganizationId();
-        if (organizationId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Candidate is not assigned to an organization");
-        }
-
-        if (user.getOrganization() == null || !organizationId.equals(user.getOrganization().getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot vote in another organization's election");
-        }
 
         Long electionId = request.getElectionId() != null
                 ? request.getElectionId()
                 : candidate.getElectionId();
 
-        // Election-level duplicate vote check (preferred)
-        if (electionId != null) {
-            Election election = electionRepository.findById(electionId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Election not found"));
+        if (electionId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Election ID is required to cast a vote");
+        }
 
-            if (!election.isActive()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This election is no longer active");
-            }
+        Election election = electionRepository.findById(electionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Election not found"));
 
-            if (voteRepository.existsByUserIdAndElectionId(user.getId(), electionId)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already voted in this election");
-            }
-        } else {
-            // Legacy org-level duplicate check
-            if (voteRepository.existsByUserIdAndOrganizationId(user.getId(), organizationId)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already voted in this organization");
-            }
+        if (!election.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This election is no longer active");
+        }
+
+        // Validate election belongs to user's organization
+        if (election.getOrganization() == null || !election.getOrganization().getId().equals(userOrgId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot vote in another organization's election");
+        }
+
+        // Validate candidate belongs to user's organization
+        Long candidateOrgId = candidate.getOrganization() != null
+                ? candidate.getOrganization().getId()
+                : (candidate.getElection() != null && candidate.getElection().getOrganization() != null
+                    ? candidate.getElection().getOrganization().getId()
+                    : null);
+
+        if (candidateOrgId != null && !candidateOrgId.equals(userOrgId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Candidate does not belong to your organization");
+        }
+
+        // Validate candidate belongs to the selected election
+        if (candidate.getElection() != null && !candidate.getElection().getId().equals(electionId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Candidate does not belong to the selected election");
+        }
+
+        // Ensure candidate associations are populated in database
+        if (candidate.getElection() == null) {
+            candidate.setElection(election);
+        }
+        if (candidate.getOrganization() == null) {
+            candidate.setOrganization(election.getOrganization());
+        }
+
+        // Check if user has already voted in this election
+        if (voteRepository.existsByUserIdAndElectionId(user.getId(), electionId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already voted in this election");
         }
 
         Vote vote = new Vote();
         vote.setUserId(user.getId());
         vote.setCandidateId(candidate.getId());
         vote.setElectionId(electionId);
-        vote.setOrganizationId(organizationId);
+        vote.setOrganizationId(userOrgId);
         vote.setTimestamp(LocalDateTime.now());
 
         try {
             voteRepository.save(vote);
         } catch (DataIntegrityViolationException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already voted");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already voted in this election");
         }
 
-        // Increment candidate vote count atomically within the same transaction
-        candidate.setVoteCount(candidate.getVoteCount() + 1);
+        // Increment candidate vote count atomically within transaction
+        int currentVotes = candidate.getVoteCount() != null ? candidate.getVoteCount() : 0;
+        candidate.setVoteCount(currentVotes + 1);
         candidateRepository.save(candidate);
 
         return "Vote cast successfully";

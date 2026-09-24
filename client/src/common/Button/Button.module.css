@@ -1,18 +1,82 @@
 .button {
-    background:#2563eb;
-    color:white;
-    padding:12px 25px;
-    border:none;
-    border-radius:8px;
-    font-size:16px;
-    cursor:pointer;
+  background-color: #5651D8;
+  color: #ffffff;
+  padding: 10px 20px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  font-family: inherit;
+  outline: none;
+  text-decoration: none;
+  user-select: none;
 }
 
 .button:hover {
-    background:#1d4ed8;
+  background-color: #4843c2;
+  box-shadow: 0 4px 12px 0 rgba(86, 81, 216, 0.25);
 }
 
 .button:disabled {
-    opacity:0.6;
-    cursor:not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.primary {
+  background-color: #5651D8;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.primary:hover {
+  background-color: #4843c2;
+}
+
+.secondary {
+  background-color: #EEF0FD;
+  color: #5651D8;
+  border-color: rgba(86, 81, 216, 0.2);
+}
+
+.secondary:hover {
+  background-color: #e0e2fb;
+}
+
+.outline {
+  background-color: transparent;
+  color: #5651D8;
+  border: 1px solid #5651D8;
+}
+
+.outline:hover {
+  background-color: rgba(86, 81, 216, 0.08);
+}
+
+.ghost {
+  background-color: transparent;
+  color: #4B5563;
+  border-color: transparent;
+}
+
+.ghost:hover {
+  background-color: #F3F4F6;
+  color: #111827;
+}
+
+.danger {
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FEE2E2;
+}
+
+.danger:hover {
+  background-color: #FEE2E2;
 }

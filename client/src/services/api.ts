@@ -12,8 +12,15 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_STORAGE_KEY);
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (token && token.trim() && token !== "null" && token !== "undefined") {
+    const cleanToken = token.trim();
+    if (config.headers) {
+      if (typeof config.headers.set === "function") {
+        config.headers.set("Authorization", `Bearer ${cleanToken}`);
+      } else {
+        config.headers["Authorization"] = `Bearer ${cleanToken}`;
+      }
+    }
   }
 
   return config;
@@ -28,6 +35,8 @@ api.interceptors.response.use(
       let errorMessage = "An error occurred while processing your request.";
 
       if (status === 401) {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        localStorage.removeItem(USER_STORAGE_KEY);
         errorMessage = "Session expired or unauthorized. Please sign in again.";
       } else if (status === 403) {
         errorMessage = "Access restricted. You may not be assigned to an organization or lack permissions.";

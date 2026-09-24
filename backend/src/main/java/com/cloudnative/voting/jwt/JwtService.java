@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class JwtService {
     private static final long EXPIRATION_MS = 86_400_000L; // 24 hours
 
     private SecretKey getKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Generate a signed JWT embedding username, role, organizationId, and email. */
@@ -64,6 +65,11 @@ public class JwtService {
         if (orgId instanceof Number) {
             return ((Number) orgId).longValue();
         }
+        if (orgId instanceof String && !((String) orgId).isBlank()) {
+            try {
+                return Long.parseLong(((String) orgId).trim());
+            } catch (NumberFormatException ignored) {}
+        }
         return null;
     }
 
@@ -78,7 +84,23 @@ public class JwtService {
                     .build()
                     .parseClaimsJws(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            System.err.println("[JWT VALIDATION] Token expired: " + e.getMessage());
+            return false;
+        } catch (UnsupportedJwtException e) {
+            System.err.println("[JWT VALIDATION] Unsupported token: " + e.getMessage());
+            return false;
+        } catch (MalformedJwtException e) {
+            System.err.println("[JWT VALIDATION] Malformed token: " + e.getMessage());
+            return false;
+        } catch (io.jsonwebtoken.security.SecurityException e) {
+            System.err.println("[JWT VALIDATION] Invalid signature: " + e.getMessage());
+            return false;
+        } catch (IllegalArgumentException e) {
+            System.err.println("[JWT VALIDATION] Token claims string is empty or null: " + e.getMessage());
+            return false;
         } catch (Exception e) {
+            System.err.println("[JWT VALIDATION] Token validation error: " + e.getMessage());
             return false;
         }
     }

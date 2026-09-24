@@ -26,4 +26,9 @@ export const candidateService = {
     const response = await api.post<Candidate>("/candidates", candidate);
     return response.data;
   },
+
+  async assignCandidate(candidateId: number, electionId: number): Promise<Candidate> {
+    const response = await api.put<Candidate>(`/candidates/${candidateId}/assign/${electionId}`);
+    return response.data;
+  },
 };

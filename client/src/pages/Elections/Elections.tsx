@@ -4,6 +4,14 @@ import { useAuth } from "../../hooks/useAuth";
 import { electionService } from "../../services/electionService";
 import { voteService } from "../../services/voteService";
 import type { Election } from "../../types/election";
+import { 
+  HiOutlineSearch, 
+  HiOutlineClipboardCheck, 
+  HiOutlineClock, 
+  HiOutlineCheckCircle, 
+  HiOutlineCollection,
+  HiOutlineArrowRight
+} from "react-icons/hi";
 import styles from "./Elections.module.css";
 
 type FilterTab = "all" | "active" | "voted" | "ended";
@@ -74,30 +82,52 @@ const Elections = () => {
     });
   }, [elections, searchQuery, activeTab, votedMap]);
 
+  // Stats calculation
+  const stats = useMemo(() => {
+    const total = elections.length;
+    const active = elections.filter(e => e.active && !votedMap[e.id]).length;
+    const voted = Object.values(votedMap).filter(Boolean).length;
+    const ended = elections.filter(e => !e.active).length;
+    return { total, active, voted, ended };
+  }, [elections, votedMap]);
+
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
-        {/* Hero Section */}
+        {/* Redesigned Hero Header */}
         <div className={styles.hero}>
           <div className={styles.heroContent}>
-            <span className={styles.badge}>Official Ballots</span>
-            <h1>Cast Your Vote Securely</h1>
+            <span className={styles.badge}>Secure Portal</span>
+            <h1>Explore Official Ballots</h1>
             <p>
-              Browse active elections, review candidate profiles, and submit your encrypted digital ballot.
+              Participate in active community governance, review authenticated candidates, and cast your vote with confidence.
             </p>
+          </div>
+          
+          {/* Quick Stats Grid */}
+          <div className={styles.heroStats}>
+            <div className={styles.statCard}>
+              <span className={styles.statValue}>{stats.total}</span>
+              <span className={styles.statLabel}>Total Ballots</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statValue} style={{ color: "#059669" }}>{stats.active}</span>
+              <span className={styles.statLabel}>Active</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statValue} style={{ color: "#5651D8" }}>{stats.voted}</span>
+              <span className={styles.statLabel}>Voted</span>
+            </div>
           </div>
         </div>
 
         {/* Toolbar: Search and Filter Tabs */}
         <div className={styles.toolbar}>
           <div className={styles.searchWrapper}>
-            <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="11" cy="11" r="8" strokeWidth="2" />
-              <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            <HiOutlineSearch className={styles.searchIcon} />
             <input
               type="text"
-              placeholder="Search elections..."
+              placeholder="Search elections by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={styles.searchInput}
@@ -109,19 +139,19 @@ const Elections = () => {
               className={`${styles.tab} ${activeTab === "all" ? styles.tabActive : ""}`}
               onClick={() => setActiveTab("all")}
             >
-              All ({elections.length})
+              <HiOutlineCollection /> All ({stats.total})
             </button>
             <button
               className={`${styles.tab} ${activeTab === "active" ? styles.tabActive : ""}`}
               onClick={() => setActiveTab("active")}
             >
-              Active
+              <HiOutlineClock /> Active
             </button>
             <button
               className={`${styles.tab} ${activeTab === "voted" ? styles.tabActive : ""}`}
               onClick={() => setActiveTab("voted")}
             >
-              Voted
+              <HiOutlineCheckCircle /> Voted
             </button>
             <button
               className={`${styles.tab} ${activeTab === "ended" ? styles.tabActive : ""}`}
@@ -145,12 +175,14 @@ const Elections = () => {
           </div>
         ) : filteredElections.length === 0 ? (
           <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>🗳️</div>
+            <div className={styles.emptyIcon}>
+              <HiOutlineClipboardCheck />
+            </div>
             <h3>No elections found</h3>
             <p>
               {searchQuery
-                ? "No elections match your search criteria."
-                : "There are currently no active elections available to vote in."}
+                ? "No elections match your current search parameters."
+                : "There are currently no elections available in this category."}
             </p>
           </div>
         ) : (
@@ -173,17 +205,12 @@ const Elections = () => {
                 >
                   <div className={styles.cardHeader}>
                     <div className={styles.iconBox}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
+                      <HiOutlineCollection />
                     </div>
 
                     {hasVoted ? (
                       <span className={styles.badgeVoted}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        Voted
+                        <HiOutlineCheckCircle style={{ fontSize: "0.9rem" }} /> Voted
                       </span>
                     ) : election.active ? (
                       <span className={styles.badgeActive}>Active</span>
@@ -196,15 +223,17 @@ const Elections = () => {
                     <h2>{election.title}</h2>
                     <p>
                       {election.description ||
-                        "Tap to review candidate profiles and submit your secure digital ballot."}
+                        "Review authenticated candidate profiles and cast your secure encrypted ballot."}
                     </p>
                   </div>
 
                   <div className={styles.cardFooter}>
                     <span className={styles.actionText}>
-                      {hasVoted ? "Review Submitted Ballot" : "Cast Vote"}
+                      {hasVoted ? "View My Ballot" : "Cast Ballot Now"}
                     </span>
-                    <span className={styles.arrowIcon}>→</span>
+                    <span className={styles.arrowIcon}>
+                      <HiOutlineArrowRight />
+                    </span>
                   </div>
                 </div>
               );

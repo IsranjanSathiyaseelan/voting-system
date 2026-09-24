@@ -1,5 +1,6 @@
 package com.cloudnative.voting.controller;
 
+import com.cloudnative.voting.config.SecurityUtils;
 import com.cloudnative.voting.dto.ChangePasswordRequest;
 import com.cloudnative.voting.dto.ForgotPasswordRequest;
 import com.cloudnative.voting.dto.RegisterRequest;
@@ -101,7 +102,7 @@ public class UserController {
 
     @GetMapping("/members")
     public List<UserResponse> listMembers(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         Long orgId = extractOrgId(authHeader);
 
@@ -112,7 +113,7 @@ public class UserController {
     public UserResponse updateMemberStatus(
             @PathVariable Long memberId,
             @RequestParam String status,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         Long orgId = extractOrgId(authHeader);
 
@@ -124,6 +125,10 @@ public class UserController {
     }
 
     private Long extractOrgId(String authHeader) {
+        Long orgId = SecurityUtils.getCurrentOrganizationIdOrNull();
+        if (orgId != null) {
+            return orgId;
+        }
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new ResponseStatusException(
@@ -132,9 +137,9 @@ public class UserController {
             );
         }
 
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(7).trim();
 
-        Long orgId = jwtService.extractOrganizationId(token);
+        orgId = jwtService.extractOrganizationId(token);
 
         if (orgId == null) {
             throw new ResponseStatusException(
