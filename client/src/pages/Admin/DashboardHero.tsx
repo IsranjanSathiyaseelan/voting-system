@@ -1,5 +1,4 @@
-import { Link } from "react-router-dom";
-import { HiOutlineSparkles, HiOutlinePlus } from "react-icons/hi";
+import { HiOutlineSparkles } from "react-icons/hi";
 import styles from "./AdminDashboard.module.css";
 
 const DashboardHero = () => {

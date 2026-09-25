@@ -82,29 +82,41 @@ const Login = () => {
             Trustworthy, Auditable &amp; Modern Voting
           </h1>
           <p className="text-base text-gray-200/90 leading-relaxed font-normal">
-            Sign in to access your multi-tenant election portal, manage candidates, and cast encrypted digital ballots with complete auditability.
+            Sign in to access your multi-tenant election portal, manage
+            candidates, and cast encrypted digital ballots with complete
+            auditability.
           </p>
 
           {/* Value Props */}
           <div className="pt-4 space-y-3">
             <div className="flex items-center gap-3 text-sm text-gray-200">
               <HiOutlineCheckCircle className="w-5 h-5 text-[#8ef0b3] flex-shrink-0" />
-              <span>Multi-tenant organization isolation and access control</span>
+              <span>
+                Multi-tenant organization isolation and access control
+              </span>
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-200">
               <HiOutlineCheckCircle className="w-5 h-5 text-[#8ef0b3] flex-shrink-0" />
-              <span>Encrypted ballot submission with cryptographically verifiable receipts</span>
+              <span>
+                Encrypted ballot submission with cryptographically verifiable
+                receipts
+              </span>
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-200">
               <HiOutlineCheckCircle className="w-5 h-5 text-[#8ef0b3] flex-shrink-0" />
-              <span>Real-time turnout analytics and automated PDF/Excel reporting</span>
+              <span>
+                Real-time turnout analytics and automated PDF/Excel reporting
+              </span>
             </div>
           </div>
         </div>
 
         {/* Footer info */}
         <div className="relative z-10 flex items-center justify-between text-xs text-gray-300/80 border-t border-white/10 pt-6">
-          <span>&copy; {new Date().getFullYear()} VoteSecure Inc. All rights reserved.</span>
+          <span>
+            &copy; {new Date().getFullYear()} VoteSecure Inc. All rights
+            reserved.
+          </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             System Operational
@@ -170,7 +182,9 @@ const Login = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
                     className="p-1 text-gray-400 hover:text-[#5651D8] transition-colors focus:outline-none"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <HiOutlineEyeOff className="w-4 h-4" />

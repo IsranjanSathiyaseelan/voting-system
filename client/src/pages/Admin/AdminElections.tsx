@@ -71,7 +71,10 @@ const AdminElections = () => {
     return candidates.filter((candidate) => {
       // Must belong to the admin's organization
       if (currentUser?.organizationId && candidate.organizationId) {
-        if (String(candidate.organizationId) !== String(currentUser.organizationId)) {
+        if (
+          String(candidate.organizationId) !==
+          String(currentUser.organizationId)
+        ) {
           return false;
         }
       }
@@ -81,10 +84,18 @@ const AdminElections = () => {
         const cName = (candidate.name ?? "").trim().toLowerCase();
         const adminUsername = (currentUser.username ?? "").trim().toLowerCase();
         const adminEmail = (currentUser.email ?? "").trim().toLowerCase();
-        const adminFullName = `${currentUser.firstName ?? ""} ${currentUser.lastName ?? ""}`.trim().toLowerCase();
+        const adminFullName =
+          `${currentUser.firstName ?? ""} ${currentUser.lastName ?? ""}`
+            .trim()
+            .toLowerCase();
         if (adminUsername && cName === adminUsername) return false;
         if (adminFullName && cName === adminFullName) return false;
-        if (candidate.party && adminEmail && candidate.party.trim().toLowerCase() === adminEmail) return false;
+        if (
+          candidate.party &&
+          adminEmail &&
+          candidate.party.trim().toLowerCase() === adminEmail
+        )
+          return false;
       }
       return true;
     });
@@ -143,18 +154,25 @@ const AdminElections = () => {
       const uniqueCandidateIds = Array.from(new Set(selectedCandidateIds));
 
       for (const candidateId of uniqueCandidateIds) {
-        const candidate = assignableCandidates.find((c) => c.id === candidateId) || candidates.find((c) => c.id === candidateId);
+        const candidate =
+          assignableCandidates.find((c) => c.id === candidateId) ||
+          candidates.find((c) => c.id === candidateId);
         if (!candidate) continue;
 
         try {
-          await candidateService.assignCandidate(candidateId, createdElectionId);
+          await candidateService.assignCandidate(
+            candidateId,
+            createdElectionId,
+          );
         } catch {
           await candidateService.addCandidate({
             name: candidate.name,
             party: candidate.party,
             voteCount: 0,
             electionId: createdElectionId,
-            organizationId: currentUser?.organizationId ? Number(currentUser.organizationId) : undefined,
+            organizationId: currentUser?.organizationId
+              ? Number(currentUser.organizationId)
+              : undefined,
           });
         }
       }
@@ -331,14 +349,13 @@ const AdminElections = () => {
                 <select
                   className={styles.candidateSelect}
                   value={draft.candidateId ?? ""}
-                  onChange={(e) =>
-                    handleCandidateChange(index, e.target.value)
-                  }
+                  onChange={(e) => handleCandidateChange(index, e.target.value)}
                 >
                   <option value="">Select Candidate</option>
                   {assignableCandidates.map((candidate) => (
                     <option key={candidate.id} value={candidate.id}>
-                      {candidate.name} {candidate.party ? `(${candidate.party})` : ""}
+                      {candidate.name}{" "}
+                      {candidate.party ? `(${candidate.party})` : ""}
                     </option>
                   ))}
                 </select>
@@ -366,7 +383,9 @@ const AdminElections = () => {
           </div>
 
           {error ? <div className={styles.errorAlert}>{error}</div> : null}
-          {success ? <div className={styles.successAlert}>{success}</div> : null}
+          {success ? (
+            <div className={styles.successAlert}>{success}</div>
+          ) : null}
 
           <div className={styles.actions}>
             <Button
@@ -385,7 +404,9 @@ const AdminElections = () => {
         <div className={styles.panelHeader}>
           <div>
             <h2>Managed Elections</h2>
-            <p className={styles.muted}>Overview of active and historical voting schedules.</p>
+            <p className={styles.muted}>
+              Overview of active and historical voting schedules.
+            </p>
           </div>
           <span className={styles.countBadge}>{elections.length} Total</span>
         </div>
@@ -394,7 +415,8 @@ const AdminElections = () => {
           <div className={styles.emptyState}>Loading elections...</div>
         ) : elections.length === 0 ? (
           <div className={styles.emptyState}>
-            No elections created yet. Use the form above to establish your first election.
+            No elections created yet. Use the form above to establish your first
+            election.
           </div>
         ) : (
           <div className={styles.tableResponsive}>
@@ -418,7 +440,7 @@ const AdminElections = () => {
                       {election.description ?? "No description provided."}
                     </td>
                     <td>
-                      {(election.startDate || election.endDate) ? (
+                      {election.startDate || election.endDate ? (
                         <span className={styles.scheduleBadge}>
                           <HiOutlineCalendar size={14} />
                           {election.startDate

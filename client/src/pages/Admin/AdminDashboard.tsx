@@ -12,14 +12,21 @@ import type { Organization } from "../../types/organization";
 import type { User } from "../../types/auth";
 
 import DashboardHero from "./DashboardHero";
-import DashboardStats from "./DashboardStats";
+import DashboardStatsService from "./DashboardStats";
 import DailyVotingChart from "./DailyVotingChart";
 import MembersTable from "./MembersTable";
 import ElectionsTable from "./ElectionsTable";
 import styles from "./AdminDashboard.module.css";
+import type { DashboardStats } from "../../types/dashboard";
 
 // Valid view keys driven by the sidebar's ?view= search param
-type DashboardView = "dashboard" | "members" | "elections" | "analytics" | "polls" | "reports";
+type DashboardView =
+  | "dashboard"
+  | "members"
+  | "elections"
+  | "analytics"
+  | "polls"
+  | "reports";
 
 const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
@@ -44,11 +51,15 @@ const AdminDashboard = () => {
     const loadStats = async () => {
       setStatsLoading(true);
       try {
-        const [dashboardStats, candidateData, electionData] = await Promise.all([
-          organizationService.getDashboardStats().catch((): DashboardStats | null => null),
-          candidateService.getResults().catch((): Candidate[] => []),
-          electionService.getAll().catch((): Election[] => []),
-        ]);
+        const [dashboardStats, candidateData, electionData] = await Promise.all(
+          [
+            organizationService
+              .getDashboardStats()
+              .catch((): DashboardStats | null => null),
+            candidateService.getResults().catch((): Candidate[] => []),
+            electionService.getAll().catch((): Election[] => []),
+          ],
+        );
         setStats(dashboardStats);
         setCandidates(candidateData);
         setElections(electionData);
@@ -62,7 +73,9 @@ const AdminDashboard = () => {
     const loadChart = async () => {
       setChartLoading(true);
       try {
-        const data = await voteService.getDailyVotes().catch((): DailyVoteCount[] => []);
+        const data = await voteService
+          .getDailyVotes()
+          .catch((): DailyVoteCount[] => []);
         setDailyVotes(data);
       } catch {
         setDailyVotes([]);
@@ -94,19 +107,29 @@ const AdminDashboard = () => {
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  const handleUpdateStatus = async (memberId: number, currentStatus: string) => {
+  const handleUpdateStatus = async (
+    memberId: number,
+    currentStatus: string,
+  ) => {
     const nextStatus = currentStatus === "ACTIVE" ? "RESTRICTED" : "ACTIVE";
     setUpdatingMemberId(memberId);
     try {
-      const updated = await userService.updateMemberStatus(memberId, nextStatus);
+      const updated = await userService.updateMemberStatus(
+        memberId,
+        nextStatus,
+      );
       setMembers((current) =>
         current.map((m) =>
-          m.id === memberId ? { ...m, status: updated.status ?? nextStatus } : m,
+          m.id === memberId
+            ? { ...m, status: updated.status ?? nextStatus }
+            : m,
         ),
       );
     } catch {
       setMembers((current) =>
-        current.map((m) => (m.id === memberId ? { ...m, status: nextStatus } : m)),
+        current.map((m) =>
+          m.id === memberId ? { ...m, status: nextStatus } : m,
+        ),
       );
     } finally {
       setUpdatingMemberId(null);
@@ -131,7 +154,9 @@ const AdminDashboard = () => {
         return <ElectionsTable elections={elections} />;
 
       case "analytics":
-        return <DailyVotingChart dailyVotes={dailyVotes} loading={chartLoading} />;
+        return (
+          <DailyVotingChart dailyVotes={dailyVotes} loading={chartLoading} />
+        );
 
       case "polls":
         // Polls view — renders elections table filtered to active only
@@ -146,7 +171,7 @@ const AdminDashboard = () => {
         return (
           <>
             <DashboardHero />
-            <DashboardStats
+            <DashboardStatsService
               stats={stats}
               candidates={candidates}
               elections={elections}
