@@ -3,7 +3,7 @@ import axios from "axios";
 const TOKEN_STORAGE_KEY = "voting-system-token";
 const USER_STORAGE_KEY = "voting-system-user";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
+const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 export const api = axios.create({
   baseURL,

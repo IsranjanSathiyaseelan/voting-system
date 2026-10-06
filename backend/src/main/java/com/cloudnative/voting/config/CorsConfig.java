@@ -15,24 +15,19 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Support Vite default port (5173), CRA (3000), Vite preview (4173), etc.
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
-                "http://127.0.0.1:*"
+                "http://127.0.0.1:*",
+                "https://localhost:*"      // WSO2 Try Out (9443) and gateway (8243)
         ));
 
         config.setAllowedMethods(List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE",
-                "OPTIONS",
-                "HEAD"
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"
         ));
 
         config.setAllowedHeaders(List.of(
                 "Authorization",
+                "X-APIM-Authorization",
                 "Content-Type",
                 "Accept",
                 "Origin",
@@ -51,7 +46,6 @@ public class CorsConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
         return source;
     }
-}
+}

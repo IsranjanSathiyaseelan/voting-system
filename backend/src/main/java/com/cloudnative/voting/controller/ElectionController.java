@@ -33,15 +33,6 @@ public class ElectionController {
         return electionService.getElectionsByOrg(orgId);
     }
 
-    @GetMapping("/active")
-    public List<Election> getActive() {
-        Long orgId = SecurityUtils.getCurrentOrganizationIdOrNull();
-        if (orgId == null) {
-            return electionService.getAllActiveElections();
-        }
-        return electionService.getActiveElectionsByOrg(orgId);
-    }
-
     @GetMapping("/{id}")
     public Election getById(@PathVariable Long id) {
         Long orgId = SecurityUtils.getCurrentOrganizationIdOrNull();

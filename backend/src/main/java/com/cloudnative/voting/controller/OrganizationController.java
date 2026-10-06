@@ -2,17 +2,13 @@ package com.cloudnative.voting.controller;
 
 import com.cloudnative.voting.config.SecurityUtils;
 import com.cloudnative.voting.dto.DashboardStatsResponse;
-import com.cloudnative.voting.dto.UserResponse;
-import com.cloudnative.voting.model.Candidate;
 import com.cloudnative.voting.model.Election;
 import com.cloudnative.voting.model.Organization;
 import com.cloudnative.voting.repository.ElectionRepository;
 import com.cloudnative.voting.repository.PollRepository;
 import com.cloudnative.voting.repository.UserRepository;
 import com.cloudnative.voting.repository.VoteRepository;
-import com.cloudnative.voting.service.CandidateService;
 import com.cloudnative.voting.service.OrganizationService;
-import com.cloudnative.voting.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,8 +20,6 @@ import java.util.List;
 public class OrganizationController {
 
     private final OrganizationService organizationService;
-    private final CandidateService candidateService;
-    private final UserService userService;
     private final ElectionRepository electionRepository;
     private final VoteRepository voteRepository;
     private final UserRepository userRepository;
@@ -33,15 +27,11 @@ public class OrganizationController {
 
     public OrganizationController(
             OrganizationService organizationService,
-            CandidateService candidateService,
-            UserService userService,
             ElectionRepository electionRepository,
             VoteRepository voteRepository,
             UserRepository userRepository,
             PollRepository pollRepository) {
         this.organizationService = organizationService;
-        this.candidateService = candidateService;
-        this.userService = userService;
         this.electionRepository = electionRepository;
         this.voteRepository = voteRepository;
         this.userRepository = userRepository;
@@ -60,18 +50,6 @@ public class OrganizationController {
         return List.of();
     }
 
-    /** Get organization by ID — restricted to the caller's own organization. */
-    @GetMapping("/{id}")
-    public Organization getById(@PathVariable Long id) {
-        assertCallerOwnsOrg(id);
-        return organizationService.getById(id);
-    }
-
-    @PostMapping
-    public Organization create(@RequestBody Organization organization) {
-        return organizationService.create(organization);
-    }
-
     /** Update organization — restricted to the caller's own organization. */
     @PutMapping("/{id}")
     public Organization update(@PathVariable Long id, @RequestBody Organization organization) {
@@ -84,34 +62,6 @@ public class OrganizationController {
     public void delete(@PathVariable Long id) {
         assertCallerOwnsOrg(id);
         organizationService.delete(id);
-    }
-
-    /** Candidates for a given org — restricted to caller's own organization. */
-    @GetMapping("/{id}/candidates")
-    public List<Candidate> getCandidates(@PathVariable Long id) {
-        assertCallerOwnsOrg(id);
-        return candidateService.getCandidatesByOrganization(id);
-    }
-
-    /** Results for a given org — restricted to caller's own organization. */
-    @GetMapping("/{id}/results")
-    public List<Candidate> getResults(@PathVariable Long id) {
-        assertCallerOwnsOrg(id);
-        return candidateService.getResultsByOrganization(id);
-    }
-
-    /** Elections for a given org — restricted to caller's own organization. */
-    @GetMapping("/{id}/elections")
-    public List<Election> getElections(@PathVariable Long id) {
-        assertCallerOwnsOrg(id);
-        return electionRepository.findByOrganizationId(id);
-    }
-
-    /** Members (users) for a given org — restricted to caller's own organization. */
-    @GetMapping("/{id}/members")
-    public List<UserResponse> getMembers(@PathVariable Long id) {
-        assertCallerOwnsOrg(id);
-        return userService.getMembersByOrganization(id);
     }
 
     /** Public listing of organizations — available without authentication for registration. */
