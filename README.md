@@ -27,8 +27,6 @@ Organizations (clubs, colleges, societies, etc.) run their own independent elect
 ### Infrastructure & API Management
 - **WSO2 API Manager** — API Gateway, traffic management, rate limiting, and gateway security
 - **Docker** + **Docker Compose** — orchestrates Postgres, backend, and frontend
-- **Kubernetes** manifests (`k8s/`)
-- **Prometheus** + **Grafana** — observability stack
 
 ---
 
@@ -106,9 +104,6 @@ voting-system/
 │       │                           # Election, Candidate, Poll, Vote
 │       ├── repository/             # Spring Data JPA repositories
 │       └── service/                # Business logic (org-ownership enforced here)
-├── k8s/                            # backend-deployment.yaml, postgres-deployment.yaml
-├── grafana/provisioning/           # dashboards + datasources
-├── prometheus.yml
 ├── docker-compose.yml
 ├── PROJECT_CONTEXT.md
 └── README.md
