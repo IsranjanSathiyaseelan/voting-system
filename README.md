@@ -1,4 +1,4 @@
-﻿# VoteSecure
+# VoteSecure
 
 A full-stack, **multi-tenant** organization-based election and polling platform built with Spring Boot, React, PostgreSQL, Docker, Kubernetes, Prometheus, and Grafana.
 
@@ -24,7 +24,8 @@ Organizations (clubs, colleges, societies, etc.) run their own independent elect
 - **Apache POI** (Excel reports) / **OpenPDF** (PDF reports)
 - **Maven** (`mvnw` wrapper included)
 
-### Infrastructure
+### Infrastructure & API Management
+- **WSO2 API Manager** — API Gateway, traffic management, rate limiting, and gateway security
 - **Docker** + **Docker Compose** — orchestrates Postgres, backend, and frontend
 - **Kubernetes** manifests (`k8s/`)
 - **Prometheus** + **Grafana** — observability stack
@@ -152,9 +153,23 @@ npm install
 npm run dev
 ```
 
-App: `http://localhost:5173`
+Configure environment variables in `client/.env`:
 
-Optionally create a `.env` file with `VITE_API_BASE_URL` to point at a non-default backend URL (defaults to `/api`).
+```env
+# Point to WSO2 API Manager Gateway (via Vite proxy for local dev)
+VITE_API_BASE_URL=/votesecureapi/1.0.0/api
+
+# WSO2 API Manager Gateway token (from WSO2 Developer Portal / Try Out)
+VITE_WSO2_TOKEN=your_wso2_access_token_here
+```
+
+Start the Vite development server:
+
+```bash
+npm run dev
+```
+
+App: `http://localhost:5173`
 
 ### Docker Compose
 
@@ -218,6 +233,110 @@ Roles are embedded in the JWT and enforced at the route level (Spring Security) 
 All non-public endpoints require an `Authorization: Bearer <token>` header. Every org-scoped operation is additionally validated in the service layer against the caller's `organizationId` from the JWT.
 
 > **Note:** `forgot-password`, `reset-password`, and `change-password` are fully implemented on the backend but are not yet wired into the frontend UI — there are no corresponding pages in `client/src/pages/`. These API endpoints exist and work but are not currently reachable from the app.
+
+---
+
+## WSO2 API Manager Integration
+
+VoteSecure integrates with **WSO2 API Manager** as an enterprise API Gateway to manage traffic, enforce rate limits/throttling, provide gateway-level access controls, and decouple frontend clients from backend microservices.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────┐
+│        React SPA (Client)       │
+│      http://localhost:5173      │
+└────────────────┬────────────────┘
+                 │ (Vite Proxy: /votesecureapi → https://localhost:8243)
+                 ▼
+┌─────────────────────────────────┐
+│     WSO2 API Manager Gateway    │
+│      https://localhost:8243     │  (Context: /votesecureapi/1.0.0)
+└────────────────┬────────────────┘
+                 │ (Routes to backend endpoint)
+                 ▼
+┌─────────────────────────────────┐
+│       Spring Boot Backend       │
+│      http://localhost:8080      │  (Controllers: /api/**)
+└─────────────────────────────────┘
+```
+
+### 1. WSO2 API Publisher Configuration
+
+When creating/publishing the API in WSO2 API Manager Publisher:
+
+| Setting | Value | Description |
+|---|---|---|
+| **API Name** | `VoteSecureAPI` | Display name of the API |
+| **Context** | `/votesecureapi` | Base context path on the WSO2 Gateway |
+| **Version** | `1.0.0` | API version |
+| **Endpoint** | `http://localhost:8080` | Spring Boot backend URL |
+| **Security** | `OAuth2`, `API Key` | Gateway authentication schemes |
+| **Authorization Header** | `Authorization` / `X-APIM-Authorization` | Gateway credential header |
+
+#### Resource Definitions
+Because Spring Boot controllers are mapped to `/api/*` (`/api/auth`, `/api/users`, `/api/elections`, etc.), all resources in WSO2 API Manager **must be prefixed with `/api`**:
+- `POST /api/auth/login`
+- `POST /api/users/register`
+- `GET /api/users/profile`
+- `GET /api/elections`
+- `POST /api/votes`
+- `GET /api/organizations/dashboard/stats`
+- *(or wildcard `/api/*`)*
+
+#### CORS Configuration
+In WSO2 Publisher (`API Configurations` → `Runtime` → `CORS Configuration`):
+- **Enable CORS:** Checked
+- **Access-Control-Allow-Origin:** `http://localhost:5173`
+- **Access-Control-Allow-Headers:** `Authorization, X-APIM-Authorization, ApiKey, Content-Type, Accept, Origin, X-Requested-With, X-User-Token`
+- **Access-Control-Allow-Methods:** `GET, POST, PUT, PATCH, DELETE, OPTIONS`
+
+### 2. Dual-Token Authentication Strategy
+
+VoteSecure operates on a dual-layer security model:
+1. **WSO2 Gateway Layer:** Validates the application subscription token (`VITE_WSO2_TOKEN`) to permit requests through the gateway.
+2. **Backend Application Layer:** Validates the user's role and multi-tenant `organizationId` from the application JWT issued at login.
+
+The Axios interceptor in [`client/src/services/api.ts`](client/src/services/api.ts) automatically coordinates both tokens:
+- **Pre-Login / Public Calls** (`/api/auth/login`, `/api/users/register`, `/api/organizations/public`): Injects the WSO2 token into `Authorization: Bearer <wso2Token>` so WSO2 Gateway allows the request through.
+- **Post-Login / Authenticated Calls**: Passes the user's session JWT in `Authorization: Bearer <userToken>` (and `X-User-Token`), while sending the gateway token in `X-APIM-Authorization: Bearer <wso2Token>` and `ApiKey: <wso2Token>`.
+
+### 3. Frontend Configuration (`client/.env`)
+
+```env
+# Route through Vite dev proxy (avoids browser self-signed SSL & CORS errors):
+VITE_API_BASE_URL=/votesecureapi/1.0.0/api
+
+# WSO2 Gateway token generated from WSO2 Developer Portal / Try Out:
+VITE_WSO2_TOKEN=fRynKytwEvEM4RPy2fb_WjsJwwQa
+```
+
+### 4. Local Development & Vite Proxy
+
+WSO2 API Manager runs on `https://localhost:8243` with a self-signed SSL certificate by default. Directly calling `https://localhost:8243` from a browser triggers `net::ERR_CERT_AUTHORITY_INVALID`.
+
+To resolve this seamlessly in local development, [`client/vite.config.ts`](client/vite.config.ts) proxies `/votesecureapi`:
+
+```typescript
+server: {
+  proxy: {
+    "/votesecureapi": {
+      target: "https://localhost:8243",
+      changeOrigin: true,
+      secure: false, // Accepts WSO2 self-signed certificate in development
+    },
+  },
+}
+```
+
+### 5. Troubleshooting WSO2 Errors
+
+| Error | Meaning | Solution |
+|---|---|---|
+| **`900906` / "No matching resource found"** | The requested URI doesn't match resources defined in WSO2 | Ensure `VITE_API_BASE_URL` ends with `/api` (e.g. `/votesecureapi/1.0.0/api`) so paths match `/api/auth/login`. |
+| **`900901` / "Invalid Credentials"** | WSO2 token missing, invalid, or expired | Generate a fresh access token from the WSO2 Developer Portal and update `VITE_WSO2_TOKEN` in `client/.env`. |
+| **`900800` / "Message throttled out"** | Request rate limit / quota exceeded | Check the tier subscription limits configured in WSO2 API Manager. |
+| **"API Gateway or Backend unavailable"** | Connection refused or SSL certificate blocked | Verify WSO2 is running. If bypassing the Vite proxy to call `https://localhost:8243` directly, open `https://localhost:8243` in a new tab once and click *Advanced → Proceed to localhost (unsafe)*. |
 
 ---
 

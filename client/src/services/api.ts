@@ -6,7 +6,7 @@ export const TOKEN_STORAGE_KEY = "voting-system-token";
 export const USER_STORAGE_KEY = "voting-system-user";
 
 const rawBaseURL =
-  import.meta.env.VITE_API_BASE_URL || "/api";
+  import.meta.env.VITE_API_BASE_URL;
 
 const baseURL =
   typeof rawBaseURL === "string"

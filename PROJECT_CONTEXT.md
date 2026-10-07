@@ -1,4 +1,4 @@
-﻿# Project Context
+# Project Context
 
 ## Project Overview
 
@@ -268,7 +268,8 @@ Database:      PostgreSQL
 | `SPRING_DATASOURCE_URL` | Backend | PostgreSQL JDBC URL |
 | `SPRING_DATASOURCE_USERNAME` | Backend | DB username |
 | `SPRING_DATASOURCE_PASSWORD` | Backend | DB password |
-| `VITE_API_BASE_URL` | Frontend | Overrides default `/api` base URL |
+| `VITE_API_BASE_URL` | Frontend | Overrides default API base URL (e.g. `https://localhost:8243/votesecureapi/1.0.0` for WSO2) |
+| `VITE_WSO2_TOKEN` | Frontend | WSO2 API Gateway token (injected via `X-APIM-Authorization`, `ApiKey`, and pre-login `Authorization`) |
 
 ---
 
