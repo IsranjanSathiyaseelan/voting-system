@@ -1,70 +1,248 @@
-import axios from "axios";
+import axios, {
+  type InternalAxiosRequestConfig,
+} from "axios";
 
-const TOKEN_STORAGE_KEY = "voting-system-token";
-const USER_STORAGE_KEY = "voting-system-user";
+export const TOKEN_STORAGE_KEY = "voting-system-token";
+export const USER_STORAGE_KEY = "voting-system-user";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL;
+const rawBaseURL =
+  import.meta.env.VITE_API_BASE_URL || "/api";
+
+const baseURL =
+  typeof rawBaseURL === "string"
+    ? rawBaseURL.trim().replace(/\/+$/, "")
+    : "";
 
 export const api = axios.create({
   baseURL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+/*
+|--------------------------------------------------------------------------
+| REQUEST INTERCEPTOR
+|--------------------------------------------------------------------------
+|
+| WSO2 requires an API access token.
+|
+| Before login:
+|   Authorization: Bearer <WSO2 token>
+|
+| After login:
+|   Authorization: Bearer <user JWT>
+|
+*/
 
-  if (token && token.trim() && token !== "null" && token !== "undefined") {
-    const cleanToken = token.trim();
-    if (config.headers) {
-      if (typeof config.headers.set === "function") {
-        config.headers.set("Authorization", `Bearer ${cleanToken}`);
-      } else {
-        config.headers["Authorization"] = `Bearer ${cleanToken}`;
-      }
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const wso2Token =
+      import.meta.env.VITE_WSO2_TOKEN?.trim();
+
+    const rawUserToken =
+      localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    const userToken =
+      rawUserToken &&
+      rawUserToken.trim() &&
+      rawUserToken !== "null" &&
+      rawUserToken !== "undefined"
+        ? rawUserToken.trim()
+        : null;
+
+    /*
+     * If the user has logged in,
+     * use the user's JWT.
+     */
+    if (userToken) {
+      config.headers.set(
+        "Authorization",
+        `Bearer ${userToken}`,
+      );
     }
-  }
 
-  return config;
-});
+    /*
+     * If the user has NOT logged in,
+     * use the WSO2 API access token.
+     */
+    else if (wso2Token) {
+      config.headers.set(
+        "Authorization",
+        `Bearer ${wso2Token}`,
+      );
+    }
+
+    return config;
+  },
+
+  (error) => {
+    return Promise.reject(error);
+  },
+);
+
+/*
+|--------------------------------------------------------------------------
+| RESPONSE INTERCEPTOR
+|--------------------------------------------------------------------------
+*/
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
+
   (error) => {
-    if (error.response) {
-      const { status, data } = error.response;
+    /*
+     * No response means network/connection problem.
+     */
+    if (!error.response) {
+      console.error(
+        "API Network Error:",
+        error,
+      );
 
-      let errorMessage = "An error occurred while processing your request.";
-
-      if (status === 401) {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        localStorage.removeItem(USER_STORAGE_KEY);
-        errorMessage = "Session expired or unauthorized. Please sign in again.";
-      } else if (status === 403) {
-        errorMessage = "Access restricted. You may not be assigned to an organization or lack permissions.";
-      }
-
-      if (typeof data === "string" && data.trim()) {
-        errorMessage = data.trim();
-      } else if (data && typeof data === "object") {
-        if (typeof data.message === "string" && data.message.trim()) {
-          errorMessage = data.message.trim();
-        } else if (typeof data.error === "string" && data.error.trim()) {
-          errorMessage = data.error.trim();
-        } else if (Array.isArray(data.errors) && data.errors.length > 0) {
-          errorMessage = data.errors
-            .map((e: { defaultMessage?: string } | string) =>
-              typeof e === "string" ? e : e.defaultMessage ?? JSON.stringify(e),
-            )
-            .join(", ");
-        }
-      }
-
-      return Promise.reject(new Error(errorMessage));
+      return Promise.reject(
+        new Error(
+          "Cannot connect to the API. Please check that WSO2 API Manager and the backend are running.",
+        ),
+      );
     }
 
+    const { status, data } = error.response;
+
+    let message =
+      "An error occurred while processing your request.";
+
+    /*
+     * --------------------------------------------------------------
+     * Extract WSO2 error message
+     * --------------------------------------------------------------
+     */
+
+    if (data && typeof data === "object") {
+      const fault = data.fault || data;
+
+      if (fault.description) {
+        message = String(fault.description);
+      } else if (fault.message) {
+        message = String(fault.message);
+      } else if (data.message) {
+        message = String(data.message);
+      } else if (data.error) {
+        message = String(data.error);
+      }
+    }
+
+    /*
+     * WSO2 sometimes returns XML/string responses.
+     */
+    if (
+      typeof data === "string" &&
+      data.trim()
+    ) {
+      const text = data.trim();
+
+      const descriptionMatch = text.match(
+        /<ams:description>(.*?)<\/ams:description>/i,
+      );
+
+      const messageMatch = text.match(
+        /<ams:message>(.*?)<\/ams:message>/i,
+      );
+
+      if (descriptionMatch?.[1]) {
+        message = descriptionMatch[1].trim();
+      } else if (messageMatch?.[1]) {
+        message = messageMatch[1].trim();
+      } else if (!text.startsWith("<")) {
+        message = text;
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------
+     * HTTP 401
+     * --------------------------------------------------------------
+     */
+
+    if (status === 401) {
+      /*
+       * Don't immediately delete the WSO2 token.
+       *
+       * The 401 could be from WSO2 because the API token
+       * is invalid/expired.
+       */
+
+      const description = message.toLowerCase();
+
+      if (
+        description.includes("missing credentials") ||
+        description.includes("invalid credentials") ||
+        description.includes("access token")
+      ) {
+        message =
+          "WSO2 authentication failed. Please check your WSO2 access token.";
+      } else {
+        /*
+         * User JWT may have expired.
+         */
+        localStorage.removeItem(
+          TOKEN_STORAGE_KEY,
+        );
+
+        localStorage.removeItem(
+          USER_STORAGE_KEY,
+        );
+
+        message =
+          "Your session has expired. Please sign in again.";
+      }
+    }
+
+    /*
+     * --------------------------------------------------------------
+     * HTTP 403
+     * --------------------------------------------------------------
+     */
+
+    else if (status === 403) {
+      message =
+        message ||
+        "You do not have permission to perform this action.";
+    }
+
+    /*
+     * --------------------------------------------------------------
+     * HTTP 404
+     * --------------------------------------------------------------
+     */
+
+    else if (status === 404) {
+      message =
+        "API resource not found. Check the WSO2 resource path and HTTP method.";
+    }
+
+    /*
+     * --------------------------------------------------------------
+     * HTTP 429
+     * --------------------------------------------------------------
+     */
+
+    else if (status === 429) {
+      message =
+        "Too many requests. Please wait and try again.";
+    }
+
+    console.error(
+      `API Error ${status}:`,
+      data,
+    );
+
     return Promise.reject(
-      new Error("Backend service unavailable. Please check if the Spring Boot server is running on port 8080."),
+      new Error(message),
     );
   },
 );
 
-export { TOKEN_STORAGE_KEY, USER_STORAGE_KEY };
+export default api;

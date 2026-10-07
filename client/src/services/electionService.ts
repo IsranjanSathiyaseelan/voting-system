@@ -8,8 +8,13 @@ export const electionService = {
   },
 
   async getActive(): Promise<Election[]> {
-    const response = await api.get<Election[]>("/elections/active");
-    return response.data;
+    try {
+      const response = await api.get<Election[]>("/elections/active");
+      return response.data;
+    } catch {
+      const all = await electionService.getAll();
+      return all.filter((e) => e.active);
+    }
   },
 
   async getById(id: number): Promise<Election> {
