@@ -37,7 +37,6 @@ public class CorsConfig {
         ));
 
         config.setExposedHeaders(List.of(
-                "Authorization",
                 "Content-Disposition"
         ));
 
