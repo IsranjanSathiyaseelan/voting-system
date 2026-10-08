@@ -156,13 +156,7 @@ SPRING_DATASOURCE_PASSWORD=yourpassword \
 
 Pick **one** mode in `client/.env`.
 
-**Mode A: Direct (no WSO2)**
-
-```env
-VITE_API_BASE_URL=/api
-```
-
-**Mode B: Through WSO2**
+### Through WSO2**
 
 ```env
 VITE_API_BASE_URL=/votesecureapi/1.0.0/api
@@ -240,7 +234,7 @@ Non-public endpoints need `Authorization: Bearer <user JWT>`.
 
 ---
 
-## WSO2 API Manager Integration (Optional)
+## WSO2 API Manager Integration
 
 WSO2 adds a gateway between the React app and Spring Boot for rate limiting, quotas and OAuth2/API Key security.
 
@@ -317,11 +311,6 @@ WSO2 runs on `https://localhost:8243` with a self-signed certificate, so the bro
 // client/vite.config.ts
 server: {
   proxy: {
-    "/api": {                      // Direct mode
-      target: "http://localhost:8080",
-      changeOrigin: true,
-      secure: false,
-    },
     "/votesecureapi": {            // Gateway mode
       target: "https://localhost:8243",
       changeOrigin: true,
@@ -426,7 +415,7 @@ Admin only:
 
 | Variable | Direct mode | Gateway mode |
 |---|---|---|
-| `VITE_API_BASE_URL` | `/api` | `/votesecureapi/1.0.0/api` |
+| `VITE_API_BASE_URL` | `/votesecureapi/1.0.0/api` |
 | `VITE_WSO2_TOKEN` | not needed | WSO2 application access token |
 
 ### Backend
