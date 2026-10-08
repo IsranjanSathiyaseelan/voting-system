@@ -6,10 +6,11 @@ export default defineConfig({
 
   server: {
     proxy: {
+      // WSO2 API Manager gateway: VITE_API_BASE_URL=/votesecureapi/1.0.0/api
       "/votesecureapi": {
         target: "https://localhost:8243",
         changeOrigin: true,
-        secure: false,
+        secure: false, // accept WSO2 self-signed certificate
       },
     },
   },
