@@ -13,7 +13,7 @@ Organizations (clubs, colleges, societies) run their own elections. Voters brows
 | Frontend | React 19, TypeScript, Vite, React Router, Axios, Recharts |
 | Backend | Spring Boot (Java 17), Spring Data JPA, Spring Security (JWT), PostgreSQL |
 | Reports | Apache POI (Excel), OpenPDF (PDF) |
-| Gateway | WSO2 API Manager 4.x (optional) |
+| Gateway | WSO2 API Manager 4.x |
 | Infra | Docker, Docker Compose |
 
 ---
