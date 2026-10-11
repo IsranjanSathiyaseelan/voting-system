@@ -119,7 +119,7 @@ voting-system/
 ### Prerequisites
 
 - Java 17+, Node.js 18+, PostgreSQL 16 (or Docker Compose), Maven (or `./mvnw`)
-- *(Optional)* WSO2 API Manager 4.x for gateway mode
+- WSO2 API Manager 4.x for gateway mode
 
 ### 1. Backend
 
