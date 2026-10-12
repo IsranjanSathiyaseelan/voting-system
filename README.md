@@ -2,7 +2,7 @@
 
 A full-stack, **multi-tenant** election and polling platform built with Spring Boot, React, PostgreSQL, Docker and **WSO2 API Manager**.
 
-Organizations (clubs, colleges, societies) run their own elections. Voters browse elections, cast one vote per election and view live results. Admins manage elections, candidates, polls and members, all strictly scoped to their own organization.
+Organizations (clubs, colleges, societies) run their own elections. Voters browse elections, cast one vote per election and view results. Admins manage elections, candidates, polls and members, all strictly scoped to their own organization.
 
 ---
 
