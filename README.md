@@ -71,11 +71,6 @@ Organizations (clubs, colleges, societies) run their own elections. Voters brows
 └─────────────────────────────┘
 ```
 
-### Direct mode (no WSO2)
-
-```
-React SPA :5173 → Vite proxy (/api → :8080) → Spring Boot :8080 → PostgreSQL
-```
 
 **The backend never calls WSO2.** WSO2 sits in front and forwards requests to Spring Boot, so the backend needs no WSO2 token or WSO2 code.
 
